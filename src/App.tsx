@@ -17,6 +17,11 @@ export const App: React.FC = () => {
   const [engine] = useState(() => new GameEngine());
   const [gameState, setGameState] = useState<GameState>(() => engine.state);
 
+  // Expose engine to window for testing score transitions
+  useEffect(() => {
+    (window as unknown as { __engine: GameEngine }).__engine = engine;
+  }, [engine]);
+
   const [settings, setSettings] = useState<UserSettings>(() => storage.getSettings());
   const [isCodexOpen, setIsCodexOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);

@@ -13,6 +13,8 @@ export interface PlayerCharacterMeshes {
   ganeshaGroup: THREE.Group;
   tassels: THREE.Group[];
   hairGroup: THREE.Group;
+  minecartGroup: THREE.Group;
+  minecartWheels: THREE.Mesh[];
 }
 
 export class ThreeModelBuilder {
@@ -55,6 +57,21 @@ export class ThreeModelBuilder {
   private fernMaterial: THREE.MeshStandardMaterial;
   private mountainHazeMat: THREE.MeshBasicMaterial;
 
+  // Level 2: Subterranean Minecart Railway Materials
+  private minecartWoodMaterial: THREE.MeshStandardMaterial;
+  private minecartIronMaterial: THREE.MeshStandardMaterial;
+  private steelRailMaterial: THREE.MeshStandardMaterial;
+  private woodenSleeperMaterial: THREE.MeshStandardMaterial;
+  private ballastMaterial: THREE.MeshStandardMaterial;
+  private timberArchMaterial: THREE.MeshStandardMaterial;
+  private cavernRockMaterial: THREE.MeshStandardMaterial;
+  private crystalAmethystMaterial: THREE.MeshStandardMaterial;
+  private crystalSapphireMaterial: THREE.MeshStandardMaterial;
+  private crystalEmeraldMaterial: THREE.MeshStandardMaterial;
+  private torchFlameMat: THREE.MeshBasicMaterial;
+  private torchFlameCoreMat: THREE.MeshBasicMaterial;
+  private torchLightPoolMat: THREE.MeshBasicMaterial;
+
   // Diya & Lighting Materials
   private diyaBrassMaterial: THREE.MeshStandardMaterial;
   private diyaFlameMat: THREE.MeshBasicMaterial;
@@ -94,6 +111,12 @@ export class ThreeModelBuilder {
   private diyaFlameGeo: THREE.BufferGeometry;
   private diyaFlameCoreGeo: THREE.BufferGeometry;
   private diyaLightPoolGeo: THREE.BufferGeometry;
+
+  // Level 2 Geometries
+  private steelRailGeo: THREE.BufferGeometry;
+  private sleeperGeo: THREE.BufferGeometry;
+  private crystalGeo: THREE.BufferGeometry;
+  private stalactiteGeo: THREE.BufferGeometry;
 
   // Obstacle Geometries
   private pillarBaseGeo: THREE.BufferGeometry;
@@ -139,6 +162,9 @@ export class ThreeModelBuilder {
   private static cachedDiyaGlowTexture: THREE.CanvasTexture | null = null;
   private static cachedGodRayTexture: THREE.CanvasTexture | null = null;
   private static cachedAlpineMountainTexture: THREE.CanvasTexture | null = null;
+  private static cachedCavernRockTexture: THREE.CanvasTexture | null = null;
+  private static cachedBallastTexture: THREE.CanvasTexture | null = null;
+  private static cachedWoodPlankTexture: THREE.CanvasTexture | null = null;
 
   constructor() {
     this.initStaticTextures();
@@ -521,6 +547,104 @@ export class ThreeModelBuilder {
     this.mountainRockGeo = new THREE.DodecahedronGeometry(0.85, 0);
     this.bushGeo = new THREE.SphereGeometry(0.7, 7, 6);
     this.fernGeo = new THREE.PlaneGeometry(0.5, 0.85);
+
+    // 7. Level 2: Subterranean Minecart Railway Materials & Geometries
+    this.minecartWoodMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.woodPlank),
+      map: ThreeModelBuilder.cachedWoodPlankTexture,
+      roughness: 0.82,
+      metalness: 0.1,
+    });
+
+    this.minecartIronMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.ironBrace),
+      roughness: 0.45,
+      metalness: 0.88,
+    });
+
+    this.steelRailMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.railSteel),
+      roughness: 0.22,
+      metalness: 0.95,
+      emissive: new THREE.Color('#334155'),
+      emissiveIntensity: 0.2,
+    });
+
+    this.woodenSleeperMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.railSleeperWood),
+      map: ThreeModelBuilder.cachedWoodPlankTexture,
+      roughness: 0.88,
+      metalness: 0.05,
+    });
+
+    this.ballastMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.ballastGravel),
+      map: ThreeModelBuilder.cachedBallastTexture,
+      roughness: 0.94,
+      metalness: 0.08,
+    });
+
+    this.timberArchMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.timberBeam),
+      map: ThreeModelBuilder.cachedWoodPlankTexture,
+      roughness: 0.85,
+      metalness: 0.08,
+    });
+
+    this.cavernRockMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.cavernRock),
+      map: ThreeModelBuilder.cachedCavernRockTexture,
+      roughness: 0.88,
+      metalness: 0.15,
+      flatShading: true,
+    });
+
+    this.crystalAmethystMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.crystalAmethyst),
+      roughness: 0.15,
+      metalness: 0.65,
+      emissive: new THREE.Color('#a855f7'),
+      emissiveIntensity: 0.65,
+    });
+
+    this.crystalSapphireMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.crystalSapphire),
+      roughness: 0.15,
+      metalness: 0.65,
+      emissive: new THREE.Color('#0284c7'),
+      emissiveIntensity: 0.65,
+    });
+
+    this.crystalEmeraldMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.MINECART.crystalEmerald),
+      roughness: 0.15,
+      metalness: 0.65,
+      emissive: new THREE.Color('#059669'),
+      emissiveIntensity: 0.65,
+    });
+
+    this.torchFlameMat = new THREE.MeshBasicMaterial({
+      color: 0xf97316,
+      transparent: true,
+      opacity: 0.95,
+    });
+
+    this.torchFlameCoreMat = new THREE.MeshBasicMaterial({
+      color: 0xfef08a,
+    });
+
+    this.torchLightPoolMat = new THREE.MeshBasicMaterial({
+      map: ThreeModelBuilder.cachedDiyaGlowTexture,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.steelRailGeo = new THREE.BoxGeometry(0.08, 0.12, ROAD_SEGMENT_LENGTH);
+    this.sleeperGeo = new THREE.BoxGeometry(1.36, 0.08, 0.22);
+    this.crystalGeo = new THREE.ConeGeometry(0.18, 0.75, 6);
+    this.stalactiteGeo = new THREE.ConeGeometry(0.45, 3.2, 7);
   }
 
   // =========================================================================
@@ -1046,6 +1170,283 @@ export class ThreeModelBuilder {
       ThreeModelBuilder.cachedAlpineMountainTexture.wrapS = THREE.ClampToEdgeWrapping;
       ThreeModelBuilder.cachedAlpineMountainTexture.wrapT = THREE.ClampToEdgeWrapping;
     }
+
+    // 9. Subterranean Cavern Rock Texture (Slate rock, fissures, deep shadows)
+    if (!ThreeModelBuilder.cachedCavernRockTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#1e2430'; // Dark slate cavern base
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Craggy rock fissures and deep cavern shadows
+        for (let i = 0; i < 90; i++) {
+          const cx = Math.random() * 1024;
+          const cy = Math.random() * 1024;
+          const cw = 60 + Math.random() * 180;
+          const ch = 40 + Math.random() * 120;
+          ctx.fillStyle = Math.random() > 0.4 ? '#121620' : '#283142';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, cw / 2, ch / 2, Math.random() * Math.PI, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Jagged rock cracks
+        for (let c = 0; c < 40; c++) {
+          let x = Math.random() * 1024;
+          let y = Math.random() * 1024;
+          ctx.strokeStyle = '#090d14';
+          ctx.lineWidth = 2 + Math.random() * 3;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          for (let s = 0; s < 5; s++) {
+            x += (Math.random() - 0.5) * 80;
+            y += Math.random() * 60;
+            ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+
+        // Subtle mineral crystal flecks
+        for (let m = 0; m < 500; m++) {
+          const mx = Math.random() * 1024;
+          const my = Math.random() * 1024;
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(192, 132, 252, 0.35)' : 'rgba(56, 189, 248, 0.35)';
+          ctx.beginPath();
+          ctx.arc(mx, my, 1.5 + Math.random() * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ThreeModelBuilder.cachedCavernRockTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedCavernRockTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedCavernRockTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedCavernRockTexture.repeat.set(2, 2);
+    }
+
+    // 10. Railway Ballast Gravel Texture (Crushed stone, rail patina)
+    if (!ThreeModelBuilder.cachedBallastTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#181d27';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Crushed stone ballast pebbles
+        for (let p = 0; p < 3500; p++) {
+          const px = Math.random() * 1024;
+          const py = Math.random() * 1024;
+          const size = 2 + Math.random() * 5;
+          const shades = ['#0f131a', '#222834', '#2d3545', '#161a22', '#374151'];
+          ctx.fillStyle = shades[Math.floor(Math.random() * shades.length)];
+          ctx.beginPath();
+          ctx.arc(px, py, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Subtle rail oil streaks along center
+        const oilGrad = ctx.createLinearGradient(0, 0, 1024, 0);
+        oilGrad.addColorStop(0, 'rgba(10, 12, 18, 0.4)');
+        oilGrad.addColorStop(0.5, 'rgba(20, 15, 25, 0.6)');
+        oilGrad.addColorStop(1, 'rgba(10, 12, 18, 0.4)');
+        ctx.fillStyle = oilGrad;
+        ctx.fillRect(0, 0, 1024, 1024);
+      }
+      ThreeModelBuilder.cachedBallastTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedBallastTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedBallastTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedBallastTexture.repeat.set(2, 6);
+    }
+
+    // 11. Weathered Dark Oak Wood Plank Texture (Minecart & Timber Frames)
+    if (!ThreeModelBuilder.cachedWoodPlankTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#3d2314';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Horizontal plank seams
+        const plankHeight = 64;
+        for (let y = 0; y < 512; y += plankHeight) {
+          ctx.strokeStyle = '#1d1008';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(512, y);
+          ctx.stroke();
+
+          // Wood grain striations
+          for (let g = 0; g < 14; g++) {
+            const gy = y + Math.random() * plankHeight;
+            ctx.strokeStyle = Math.random() > 0.5 ? '#4e2f1b' : '#2b170c';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(512, gy + (Math.random() - 0.5) * 6);
+            ctx.stroke();
+          }
+
+          // Iron nails at plank ends
+          [20, 512 - 20].forEach((nx) => {
+            ctx.fillStyle = '#1c1917';
+            ctx.beginPath();
+            ctx.arc(nx, y + plankHeight / 2, 3, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+      }
+      ThreeModelBuilder.cachedWoodPlankTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedWoodPlankTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedWoodPlankTexture.wrapT = THREE.RepeatWrapping;
+    }
+  }
+
+  // =========================================================================
+  // 3D MINECART MODEL FOR LEVEL 2 (MINECART RAILWAY)
+  // =========================================================================
+  public createMinecart(): { group: THREE.Group; wheels: THREE.Mesh[]; lanternFlame: THREE.Mesh } {
+    const group = new THREE.Group();
+    group.name = 'MINECART_GROUP';
+
+    const cartWidth = 1.34;
+    const cartHeight = 0.68;
+    const cartLength = 1.76;
+
+    // Wooden plank main body
+    const bodyGeo = new THREE.BoxGeometry(cartWidth, cartHeight, cartLength);
+    const bodyMesh = new THREE.Mesh(bodyGeo, this.minecartWoodMaterial);
+    bodyMesh.position.set(0, 0.44, 0);
+    bodyMesh.castShadow = true;
+    group.add(bodyMesh);
+
+    // Inner hollow rim / cavity illusion (dark interior floor)
+    const interiorFloorGeo = new THREE.PlaneGeometry(cartWidth - 0.14, cartLength - 0.14);
+    interiorFloorGeo.rotateX(-Math.PI / 2);
+    const interiorFloor = new THREE.Mesh(interiorFloorGeo, new THREE.MeshBasicMaterial({ color: 0x140e0a }));
+    interiorFloor.position.set(0, 0.52, 0);
+    group.add(interiorFloor);
+
+    // Top iron rim
+    const topRimGeo = new THREE.BoxGeometry(cartWidth + 0.06, 0.08, cartLength + 0.06);
+    const topRim = new THREE.Mesh(topRimGeo, this.minecartIronMaterial);
+    topRim.position.set(0, 0.78, 0);
+    group.add(topRim);
+
+    // Bottom chassis iron frame
+    const bottomFrameGeo = new THREE.BoxGeometry(cartWidth + 0.04, 0.09, cartLength + 0.04);
+    const bottomFrame = new THREE.Mesh(bottomFrameGeo, this.minecartIronMaterial);
+    bottomFrame.position.set(0, 0.14, 0);
+    group.add(bottomFrame);
+
+    // 4 Corner Iron Angles with Rivets
+    const cornerOffsets = [
+      { x: -cartWidth / 2 - 0.01, z: -cartLength / 2 - 0.01 },
+      { x: cartWidth / 2 + 0.01, z: -cartLength / 2 - 0.01 },
+      { x: -cartWidth / 2 - 0.01, z: cartLength / 2 + 0.01 },
+      { x: cartWidth / 2 + 0.01, z: cartLength / 2 + 0.01 },
+    ];
+    cornerOffsets.forEach((co) => {
+      const cornerGeo = new THREE.BoxGeometry(0.1, cartHeight + 0.04, 0.1);
+      const corner = new THREE.Mesh(cornerGeo, this.minecartIronMaterial);
+      corner.position.set(co.x, 0.44, co.z);
+      group.add(corner);
+
+      [-0.18, 0, 0.18].forEach((ry) => {
+        const rivetGeo = new THREE.SphereGeometry(0.024, 6, 6);
+        const rivet = new THREE.Mesh(rivetGeo, this.goldMaterial);
+        rivet.position.set(co.x + (co.x > 0 ? 0.04 : -0.04), 0.44 + ry, co.z);
+        group.add(rivet);
+      });
+    });
+
+    // 4 Flanged Iron Railway Wheels on 2 Steel Axles
+    const wheels: THREE.Mesh[] = [];
+    const wheelRadius = 0.22;
+    const wheelWidth = 0.07;
+    const flangeRadius = 0.26;
+    const flangeWidth = 0.025;
+
+    const axleOffsets = [-0.52, 0.52]; // Front & Rear axles
+    const sideOffsets = [-0.54, 0.54]; // Left & Right wheel centers (matches 1.08m rail spacing)
+
+    axleOffsets.forEach((az) => {
+      const axleGeo = new THREE.CylinderGeometry(0.04, 0.04, cartWidth + 0.1, 8);
+      axleGeo.rotateZ(Math.PI / 2);
+      const axle = new THREE.Mesh(axleGeo, this.minecartIronMaterial);
+      axle.position.set(0, 0.15, az);
+      group.add(axle);
+
+      sideOffsets.forEach((sx) => {
+        const boxGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+        const box = new THREE.Mesh(boxGeo, this.minecartIronMaterial);
+        box.position.set(sx > 0 ? sx - 0.06 : sx + 0.06, 0.15, az);
+        group.add(box);
+      });
+    });
+
+    axleOffsets.forEach((az) => {
+      sideOffsets.forEach((sx) => {
+        const wheelGroup = new THREE.Group();
+        wheelGroup.position.set(sx, 0.15, az);
+
+        const treadGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 14);
+        treadGeo.rotateZ(Math.PI / 2);
+        const tread = new THREE.Mesh(treadGeo, this.minecartIronMaterial);
+        wheelGroup.add(tread);
+
+        const flangeGeo = new THREE.CylinderGeometry(flangeRadius, flangeRadius, flangeWidth, 14);
+        flangeGeo.rotateZ(Math.PI / 2);
+        const flange = new THREE.Mesh(flangeGeo, this.minecartIronMaterial);
+        flange.position.x = sx > 0 ? -wheelWidth / 2 : wheelWidth / 2;
+        wheelGroup.add(flange);
+
+        const hubGeo = new THREE.CylinderGeometry(0.05, 0.05, wheelWidth + 0.02, 8);
+        hubGeo.rotateZ(Math.PI / 2);
+        const hub = new THREE.Mesh(hubGeo, this.goldMaterial);
+        wheelGroup.add(hub);
+
+        group.add(wheelGroup);
+        wheels.push(wheelGroup as unknown as THREE.Mesh);
+      });
+    });
+
+    // Front Brass Lantern mounted on Minecart front
+    const lanternGroup = new THREE.Group();
+    lanternGroup.position.set(0, 0.68, -cartLength / 2 - 0.12);
+
+    const bracketGeo = new THREE.BoxGeometry(0.06, 0.16, 0.14);
+    const bracket = new THREE.Mesh(bracketGeo, this.minecartIronMaterial);
+    lanternGroup.add(bracket);
+
+    const lanternBodyGeo = new THREE.CylinderGeometry(0.09, 0.07, 0.18, 8);
+    const lanternBody = new THREE.Mesh(lanternBodyGeo, this.diyaBrassMaterial);
+    lanternBody.position.set(0, 0.08, -0.06);
+    lanternGroup.add(lanternBody);
+
+    const flameGeo = new THREE.ConeGeometry(0.045, 0.14, 8);
+    const flame = new THREE.Mesh(flameGeo, this.torchFlameMat);
+    flame.position.set(0, 0.1, -0.06);
+    lanternGroup.add(flame);
+
+    const lanternGlowGeo = new THREE.SphereGeometry(0.12, 8, 8);
+    const lanternGlow = new THREE.Mesh(lanternGlowGeo, new THREE.MeshBasicMaterial({
+      color: 0xfef08a,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+    }));
+    lanternGlow.position.set(0, 0.1, -0.06);
+    lanternGroup.add(lanternGlow);
+
+    group.add(lanternGroup);
+
+    return { group, wheels, lanternFlame: flame };
   }
 
   // =========================================================================
@@ -1464,6 +1865,11 @@ export class ThreeModelBuilder {
     ganeshaGroup.add(auraInner, auraOuter);
     characterRotator.add(ganeshaGroup);
 
+    // 8. 3D Minecart for Level 2 (Subterranean Railway)
+    const { group: minecartGroup, wheels: minecartWheels } = this.createMinecart();
+    minecartGroup.visible = false; // Initially hidden in Level 1
+    characterRotator.add(minecartGroup);
+
     return {
       root,
       characterRotator,
@@ -1476,6 +1882,8 @@ export class ThreeModelBuilder {
       ganeshaGroup,
       tassels,
       hairGroup,
+      minecartGroup,
+      minecartWheels,
     };
   }
 
@@ -2016,18 +2424,23 @@ export class ThreeModelBuilder {
   // =========================================================================
   public createRoadSegment(length: number): THREE.Group {
     const segment = new THREE.Group();
-    segment.name = 'MOUNTAIN_ROAD_SEGMENT';
+    segment.name = 'DUAL_LEVEL_ROAD_SEGMENT';
+
+    // -----------------------------------------------------------------------
+    // LEVEL 1: MOUNTAIN FOREST TRAIL
+    // -----------------------------------------------------------------------
+    const level1Group = new THREE.Group();
+    level1Group.name = 'LEVEL_1_GROUP';
 
     // 1. Mountain Trail Dirt Surface (Earthy mountain trail texture)
     const roadMesh = new THREE.Mesh(this.roadPlaneGeo, this.mountainTrailMaterial);
-    segment.add(roadMesh);
+    level1Group.add(roadMesh);
 
     // 2. Clear 3-Lane Dividers (Soft golden sandstone/brass inlay)
-    // Keeps the 3 running lanes completely clear and readable so obstacles and player are easy to see!
     [-LANE_WIDTH / 2 - 0.1, LANE_WIDTH / 2 + 0.1].forEach((lx) => {
       const lineMesh = new THREE.Mesh(this.roadLineGeo, this.goldMaterial);
       lineMesh.position.set(lx, 0.015, 0);
-      segment.add(lineMesh);
+      level1Group.add(lineMesh);
     });
 
     // 3. Natural Mountain Trail Curbs (Mossy granite stone edges)
@@ -2036,11 +2449,10 @@ export class ThreeModelBuilder {
     leftCurb.position.set(-roadWidth / 2 - 0.32, 0.16, 0);
     const rightCurb = new THREE.Mesh(this.roadCurbGeo, this.mountainRockMaterial);
     rightCurb.position.set(roadWidth / 2 + 0.32, 0.16, 0);
-    segment.add(leftCurb, rightCurb);
+    level1Group.add(leftCurb, rightCurb);
 
-    // 4. DENSE FOREST ON LEFT AND RIGHT SIDES (TASK 1)
-    // Seamlessly looping layered pines, broadleaf mixed trees, bushes, rocks, and ferns
-    this.populateDenseForestSides(segment, length, roadWidth);
+    // 4. Dense Forest on Left & Right Sides
+    this.populateDenseForestSides(level1Group, length, roadWidth);
 
     // 5. Rustic Stone Pedestals with Lit Diyas along the Trail Borders
     const lampStep = 25;
@@ -2048,16 +2460,349 @@ export class ThreeModelBuilder {
       [-roadWidth / 2 - 0.9, roadWidth / 2 + 0.9].forEach((px) => {
         const diyaPost = this.createGlowingDiyaPost();
         diyaPost.position.set(px, 0.16, pz);
-        segment.add(diyaPost);
+        level1Group.add(diyaPost);
 
         const poolMesh = new THREE.Mesh(this.diyaLightPoolGeo, this.diyaLightPoolMat);
         const roadInwardOffset = px < 0 ? 0.7 : -0.7;
         poolMesh.position.set(px + roadInwardOffset, 0.02, pz);
-        segment.add(poolMesh);
+        level1Group.add(poolMesh);
       });
     }
 
+    segment.add(level1Group);
+
+    // -----------------------------------------------------------------------
+    // LEVEL 2: SUBTERRANEAN MINECART RAILWAY (TUNNELS, TRACKS, TIMBERS & CRYSTALS)
+    // -----------------------------------------------------------------------
+    const level2Group = new THREE.Group();
+    level2Group.name = 'LEVEL_2_GROUP';
+    level2Group.visible = false; // Initially hidden, enabled when level >= 2
+
+    this.populateRailwayMineSegment(level2Group, length, roadWidth);
+    segment.add(level2Group);
+
+    segment.userData.level1Group = level1Group;
+    segment.userData.level2Group = level2Group;
+
     return segment;
+  }
+
+  // Helper to populate Subterranean Minecart Railway (Level 2)
+  private populateRailwayMineSegment(level2Group: THREE.Group, length: number, roadWidth: number) {
+    // 1. Ballast Bed Ground
+    const ballastGeo = new THREE.PlaneGeometry(roadWidth, length);
+    ballastGeo.rotateX(-Math.PI / 2);
+    const ballastMesh = new THREE.Mesh(ballastGeo, this.ballastMaterial);
+    level2Group.add(ballastMesh);
+
+    // Side Timber Curbs / Retaining Beams
+    const curbGeo = new THREE.BoxGeometry(0.55, 0.32, length);
+    const leftCurb = new THREE.Mesh(curbGeo, this.timberArchMaterial);
+    leftCurb.position.set(-roadWidth / 2 - 0.28, 0.16, 0);
+    const rightCurb = new THREE.Mesh(curbGeo, this.timberArchMaterial);
+    rightCurb.position.set(roadWidth / 2 + 0.28, 0.16, 0);
+    level2Group.add(leftCurb, rightCurb);
+
+    // 2. 3 Sets of Steel Railway Tracks & Wooden Sleepers
+    const lanes = [-LANE_WIDTH, 0, LANE_WIDTH]; // [-2.4, 0, 2.4]
+    const railHalfGauge = 0.54; // Rail spacing = 1.08m
+
+    lanes.forEach((lx) => {
+      // Left and Right Steel Rails for this lane
+      const leftRail = new THREE.Mesh(this.steelRailGeo, this.steelRailMaterial);
+      leftRail.position.set(lx - railHalfGauge, 0.08, 0);
+      const rightRail = new THREE.Mesh(this.steelRailGeo, this.steelRailMaterial);
+      rightRail.position.set(lx + railHalfGauge, 0.08, 0);
+      level2Group.add(leftRail, rightRail);
+
+      // Wooden Sleepers (Ties) spaced every 1.5m
+      const tieStep = 1.5;
+      for (let sz = -length / 2 + 0.75; sz <= length / 2 - 0.75; sz += tieStep) {
+        const tie = new THREE.Mesh(this.sleeperGeo, this.woodenSleeperMaterial);
+        tie.position.set(lx, 0.035, sz);
+        level2Group.add(tie);
+
+        // Small iron tie plates where rails rest on sleeper
+        [-railHalfGauge, railHalfGauge].forEach((rx) => {
+          const plateGeo = new THREE.BoxGeometry(0.12, 0.015, 0.18);
+          const plate = new THREE.Mesh(plateGeo, this.minecartIronMaterial);
+          plate.position.set(lx + rx, 0.075, sz);
+          level2Group.add(plate);
+        });
+      }
+    });
+
+    // 3. Underground Mine Timber Support Frames (Arches)
+    [-12.5, 12.5].forEach((az) => {
+      const arch = this.createMineTimberArch(roadWidth);
+      arch.position.set(0, 0, az);
+      level2Group.add(arch);
+    });
+
+    // 4. Subterranean Cavern Rock Walls, Crystals & Torches along both sides
+    const sides = [-1, 1];
+    sides.forEach((sideSign) => {
+      const baseOffset = (roadWidth / 2 + 1.8) * sideSign;
+
+      // Rugged Cavern Rock Boulders along the tunnel walls
+      const rockOffsets = [
+        { x: 1.5, z: -20, s: 1.8 },
+        { x: 3.8, z: -14, s: 2.2 },
+        { x: 1.8, z: -6, s: 1.9 },
+        { x: 4.2, z: 2, s: 2.4 },
+        { x: 1.6, z: 10, s: 1.7 },
+        { x: 3.5, z: 18, s: 2.1 },
+        { x: 2.0, z: 23, s: 1.8 },
+      ];
+
+      rockOffsets.forEach((ro) => {
+        const rock = this.createCavernRock(ro.s);
+        rock.position.set(baseOffset + ro.x * sideSign, 0, ro.z);
+        level2Group.add(rock);
+      });
+
+      // Glowing Crystal Clusters (Amethyst, Sapphire, Emerald)
+      const crystalPositions = [
+        { x: 0.9, z: -17, type: 'amethyst' },
+        { x: 2.2, z: -8, type: 'sapphire' },
+        { x: 0.8, z: 5, type: 'emerald' },
+        { x: 2.5, z: 15, type: 'amethyst' },
+        { x: 1.1, z: -23, type: 'sapphire' },
+      ];
+
+      crystalPositions.forEach((cp) => {
+        const cluster = this.createCrystalCluster(cp.type as 'amethyst' | 'sapphire' | 'emerald');
+        cluster.position.set(baseOffset + cp.x * sideSign, 0.1, cp.z);
+        level2Group.add(cluster);
+      });
+
+      // Wall-mounted mine torches
+      [-18, 0, 18].forEach((tz) => {
+        const torch = this.createMineTorch(sideSign < 0);
+        torch.position.set(baseOffset + 0.4 * sideSign, 1.6, tz);
+        level2Group.add(torch);
+      });
+    });
+  }
+
+  // Heavy Mine Timber Arch spanning across road
+  public createMineTimberArch(roadWidth: number): THREE.Group {
+    const arch = new THREE.Group();
+    arch.name = 'MINE_TIMBER_ARCH';
+
+    const postHeight = 5.4;
+    const postThick = 0.38;
+    const span = roadWidth + 1.2;
+
+    // Left and Right Vertical Posts
+    const postGeo = new THREE.BoxGeometry(postThick, postHeight, postThick);
+    const leftPost = new THREE.Mesh(postGeo, this.timberArchMaterial);
+    leftPost.position.set(-span / 2, postHeight / 2, 0);
+    const rightPost = new THREE.Mesh(postGeo, this.timberArchMaterial);
+    rightPost.position.set(span / 2, postHeight / 2, 0);
+    arch.add(leftPost, rightPost);
+
+    // Top Cross Lintel Beam
+    const lintelGeo = new THREE.BoxGeometry(span + 0.6, postThick + 0.04, postThick + 0.04);
+    const lintel = new THREE.Mesh(lintelGeo, this.timberArchMaterial);
+    lintel.position.set(0, postHeight + 0.08, 0);
+    arch.add(lintel);
+
+    // Diagonal Corner Timber Knee-Braces
+    const braceGeo = new THREE.BoxGeometry(0.24, 1.2, 0.24);
+    const leftBrace = new THREE.Mesh(braceGeo, this.timberArchMaterial);
+    leftBrace.position.set(-span / 2 + 0.45, postHeight - 0.45, 0);
+    leftBrace.rotation.z = Math.PI / 4;
+
+    const rightBrace = new THREE.Mesh(braceGeo, this.timberArchMaterial);
+    rightBrace.position.set(span / 2 - 0.45, postHeight - 0.45, 0);
+    rightBrace.rotation.z = -Math.PI / 4;
+    arch.add(leftBrace, rightBrace);
+
+    // Iron Plates and Bolts at joints
+    [-span / 2, span / 2].forEach((px) => {
+      const plateGeo = new THREE.BoxGeometry(0.44, 0.44, postThick + 0.06);
+      const plate = new THREE.Mesh(plateGeo, this.minecartIronMaterial);
+      plate.position.set(px, postHeight, 0);
+      arch.add(plate);
+    });
+
+    // Hanging Brass Mine Lantern from center of lintel
+    const lanternGroup = new THREE.Group();
+    lanternGroup.position.set(0, postHeight - 0.2, 0);
+
+    const chainGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.0, 6);
+    const chain = new THREE.Mesh(chainGeo, this.minecartIronMaterial);
+    chain.position.set(0, -0.5, 0);
+    lanternGroup.add(chain);
+
+    const lanternBodyGeo = new THREE.CylinderGeometry(0.18, 0.12, 0.34, 8);
+    const lanternBody = new THREE.Mesh(lanternBodyGeo, this.diyaBrassMaterial);
+    lanternBody.position.set(0, -1.15, 0);
+    lanternGroup.add(lanternBody);
+
+    const flame = new THREE.Mesh(this.diyaFlameGeo, this.torchFlameMat);
+    flame.position.set(0, -1.05, 0);
+    flame.name = 'DIYA_FLAME';
+    lanternGroup.add(flame);
+
+    const flameCore = new THREE.Mesh(this.diyaFlameCoreGeo, this.torchFlameCoreMat);
+    flameCore.position.set(0, -1.07, 0);
+    lanternGroup.add(flameCore);
+
+    const poolMesh = new THREE.Mesh(this.diyaLightPoolGeo, this.torchLightPoolMat);
+    poolMesh.position.set(0, 0.02, 0);
+    arch.add(poolMesh);
+
+    arch.add(lanternGroup);
+
+    return arch;
+  }
+
+  // Rugged Subterranean Cavern Rock
+  public createCavernRock(scale: number = 1.0): THREE.Mesh {
+    const geo = new THREE.DodecahedronGeometry(scale, 1);
+    const rock = new THREE.Mesh(geo, this.cavernRockMaterial);
+    rock.position.y = 0.5 * scale;
+    rock.scale.set(scale * 1.2, scale * 1.5, scale * 1.1);
+    rock.rotation.set((scale * 1.7) % Math.PI, (scale * 2.3) % Math.PI, 0.1);
+    rock.castShadow = true;
+    return rock;
+  }
+
+  // Glowing Crystal Cluster (Amethyst, Sapphire, Emerald)
+  public createCrystalCluster(type: 'amethyst' | 'sapphire' | 'emerald'): THREE.Group {
+    const cluster = new THREE.Group();
+    let mat = this.crystalAmethystMaterial;
+    if (type === 'sapphire') mat = this.crystalSapphireMaterial;
+    if (type === 'emerald') mat = this.crystalEmeraldMaterial;
+
+    const crystalCount = 4 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < crystalCount; i++) {
+      const angle = (i / crystalCount) * Math.PI * 2;
+      const dist = 0.12 + (i % 3) * 0.08;
+      const heightScale = 0.6 + (i % 4) * 0.35;
+
+      const crystal = new THREE.Mesh(this.crystalGeo, mat);
+      crystal.position.set(Math.cos(angle) * dist, 0.38 * heightScale, Math.sin(angle) * dist);
+      crystal.rotation.set((Math.random() - 0.5) * 0.3, angle, (Math.random() - 0.5) * 0.3);
+      crystal.scale.set(0.85, heightScale, 0.85);
+      cluster.add(crystal);
+    }
+
+    const glowColor = type === 'amethyst' ? 0xc084fc : type === 'sapphire' ? 0x38bdf8 : 0x34d399;
+    const glowGeo = new THREE.PlaneGeometry(1.4, 1.4);
+    glowGeo.rotateX(-Math.PI / 2);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: glowColor,
+      transparent: true,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.position.set(0, 0.02, 0);
+    cluster.add(glow);
+
+    return cluster;
+  }
+
+  // Wall-Mounted Mine Torch
+  public createMineTorch(facingRight: boolean): THREE.Group {
+    const torchGroup = new THREE.Group();
+
+    const bracketGeo = new THREE.BoxGeometry(0.35, 0.08, 0.08);
+    const bracket = new THREE.Mesh(bracketGeo, this.minecartIronMaterial);
+    torchGroup.add(bracket);
+
+    const handleGeo = new THREE.CylinderGeometry(0.04, 0.035, 0.55, 6);
+    const handle = new THREE.Mesh(handleGeo, this.timberArchMaterial);
+    handle.position.set(facingRight ? 0.18 : -0.18, 0.15, 0);
+    handle.rotation.z = facingRight ? -0.2 : 0.2;
+    torchGroup.add(handle);
+
+    const flame = new THREE.Mesh(this.diyaFlameGeo, this.torchFlameMat);
+    flame.position.set(facingRight ? 0.22 : -0.22, 0.48, 0);
+    flame.name = 'DIYA_FLAME';
+    torchGroup.add(flame);
+
+    const flameCore = new THREE.Mesh(this.diyaFlameCoreGeo, this.torchFlameCoreMat);
+    flameCore.position.set(facingRight ? 0.22 : -0.22, 0.44, 0);
+    torchGroup.add(flameCore);
+
+    return torchGroup;
+  }
+
+  // =========================================================================
+  // SUBTERRANEAN CAVERN SKY / CEILING (LEVEL 2)
+  // =========================================================================
+  public createUndergroundCavernSky(): THREE.Group {
+    const cavernGroup = new THREE.Group();
+    cavernGroup.name = 'UNDERGROUND_CAVERN_SKY';
+
+    // 1. Massive Cavern Rock Vault Dome
+    const domeGeo = new THREE.SphereGeometry(350, 32, 22);
+    const domeMat = new THREE.MeshStandardMaterial({
+      map: ThreeModelBuilder.cachedCavernRockTexture,
+      side: THREE.BackSide,
+      roughness: 0.92,
+      metalness: 0.1,
+      color: 0x181d27,
+    });
+    const domeMesh = new THREE.Mesh(domeGeo, domeMat);
+    cavernGroup.add(domeMesh);
+
+    // 2. Hanging Stalactites from Cavern Roof
+    for (let i = 0; i < 28; i++) {
+      const angle = (i / 28) * Math.PI * 2;
+      const radius = 25 + (i % 5) * 18;
+      const sx = Math.cos(angle) * radius;
+      const sz = -60 - (i % 7) * 35;
+      const sy = 45 + ((i * 7) % 25);
+      const sScale = 2.5 + (i % 3) * 1.5;
+
+      const stalactite = new THREE.Mesh(this.stalactiteGeo, this.cavernRockMaterial);
+      stalactite.position.set(sx, sy, sz);
+      stalactite.rotation.x = Math.PI; // Point down!
+      stalactite.scale.set(sScale, sScale * 1.4, sScale);
+      cavernGroup.add(stalactite);
+    }
+
+    // 3. Giant Glowing Crystal Geode Veins in Distant Cavern Vault
+    const crystalColors = [0xc084fc, 0x38bdf8, 0x34d399];
+    for (let c = 0; c < 12; c++) {
+      const cx = (c % 2 === 0 ? -1 : 1) * (45 + (c % 4) * 20);
+      const cz = -120 - c * 18;
+      const cy = 20 + (c % 3) * 15;
+      const col = crystalColors[c % 3];
+
+      const geodeGeo = new THREE.DodecahedronGeometry(12, 1);
+      const geodeMat = new THREE.MeshStandardMaterial({
+        color: col,
+        emissive: col,
+        emissiveIntensity: 0.75,
+        roughness: 0.2,
+        metalness: 0.8,
+      });
+      const geode = new THREE.Mesh(geodeGeo, geodeMat);
+      geode.position.set(cx, cy, cz);
+      cavernGroup.add(geode);
+
+      const auraGeo = new THREE.RingGeometry(12, 28, 16);
+      const auraMat = new THREE.MeshBasicMaterial({
+        color: col,
+        transparent: true,
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const aura = new THREE.Mesh(auraGeo, auraMat);
+      aura.position.set(cx, cy, cz + 1);
+      cavernGroup.add(aura);
+    }
+
+    return cavernGroup;
   }
 
   // Helper to populate dense layered pine and mixed forest along trail sides

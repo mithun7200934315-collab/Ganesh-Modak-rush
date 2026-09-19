@@ -149,6 +149,52 @@ export const HUD = React.memo<HUDProps>(({
           </button>
         </div>
 
+        {/* Level Indicator Badge */}
+        {state.level >= 2 ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, rgba(180, 83, 9, 0.9) 0%, rgba(120, 53, 15, 0.9) 100%)',
+              border: '1.5px solid rgba(251, 191, 36, 0.8)',
+              borderRadius: '20px',
+              padding: '4px 14px',
+              backdropFilter: 'blur(8px)',
+              fontSize: '12px',
+              fontWeight: 900,
+              color: '#fde047',
+              letterSpacing: '0.8px',
+              boxShadow: '0 0 16px rgba(245, 158, 11, 0.6)',
+              animation: 'pulse 1.5s infinite alternate',
+            }}
+          >
+            <span>🚂 LEVEL 2</span>
+            <span style={{ color: '#fef08a', fontWeight: 600, fontSize: '11px' }}>• Minecart Railway</span>
+          </div>
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, rgba(20, 83, 45, 0.85) 0%, rgba(22, 101, 52, 0.85) 100%)',
+              border: '1.5px solid rgba(74, 222, 128, 0.6)',
+              borderRadius: '20px',
+              padding: '4px 14px',
+              backdropFilter: 'blur(8px)',
+              fontSize: '12px',
+              fontWeight: 800,
+              color: '#86efac',
+              letterSpacing: '0.8px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.4)',
+            }}
+          >
+            <span>🌲 LEVEL 1</span>
+            <span style={{ color: '#dcfce7', fontWeight: 600, fontSize: '11px' }}>• Mountain Trail</span>
+          </div>
+        )}
+
         {/* Speed Progression Badge */}
         <div
           style={{
@@ -169,7 +215,6 @@ export const HUD = React.memo<HUDProps>(({
           <Zap size={14} color="#facc15" />
           <span>SPEED: {(state.speedMultiplier || 1.0).toFixed(2)}x (+6%/8s)</span>
         </div>
-
 
         {/* Speed Increase Paused Indicator */}
         {state.speedIncreasePauseTimer > 0 && (
@@ -195,6 +240,70 @@ export const HUD = React.memo<HUDProps>(({
           </div>
         )}
       </div>
+
+      {/* Level Transition Announcement Banner */}
+      {state.levelTransitionBanner && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '75px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+            border: '2.5px solid #fbbf24',
+            borderRadius: '24px',
+            padding: '16px 36px',
+            boxShadow: '0 12px 48px rgba(245, 158, 11, 0.75), 0 0 40px rgba(251, 191, 36, 0.8)',
+            backdropFilter: 'blur(16px)',
+            animation: 'bounce 0.6s ease',
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+        >
+          <div
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: '28px',
+              fontWeight: 900,
+              color: '#ffffff',
+              letterSpacing: '1.5px',
+              textShadow: '0 2px 12px rgba(0, 0, 0, 0.9), 0 0 20px #facc15',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
+            <span style={{ fontSize: '26px' }}>🚂</span>
+            <span>{state.levelTransitionBanner.text}</span>
+            <span style={{ fontSize: '26px' }}>🚂</span>
+          </div>
+          <div
+            style={{
+              fontSize: '15px',
+              fontWeight: 800,
+              color: '#fde047',
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+            }}
+          >
+            ✨ {state.levelTransitionBanner.subtext} ✨
+          </div>
+          <div
+            style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              color: '#fed7aa',
+              letterSpacing: '1px',
+            }}
+          >
+            Riding into the Subterranean Crystal Caverns!
+          </div>
+        </div>
+      )}
 
       {/* Center Mega Modak Celebration Banner */}
       {state.bonusMessage && (

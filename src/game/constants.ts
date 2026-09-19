@@ -153,7 +153,55 @@ export const GAME_CONFIG = {
     lotusPinkDeep: '#db2777',  // Deep lotus petal base
     modakSweetGold: '#fde047', // Delicious golden modak sweets
   },
+  // Level 2: Subterranean Minecart Railway Palette
+  MINECART: {
+    woodPlank: '#3d2314',
+    woodPlankLight: '#5a371e',
+    ironBrace: '#2a2e37',
+    ironRivet: '#64748b',
+    wheelIron: '#334155',
+    wheelFlange: '#475569',
+    railSteel: '#94a3b8',
+    railSteelShine: '#f1f5f9',
+    railSleeperWood: '#2b1d16',
+    ballastGravel: '#181d27',
+    timberBeam: '#452b1b',
+    cavernRock: '#1e2430',
+    cavernRockDark: '#0f131a',
+    cavernCeiling: '#090d14',
+    cavernFog: '#0b0f19',
+    crystalAmethyst: '#c084fc',
+    crystalSapphire: '#38bdf8',
+    crystalEmerald: '#34d399',
+    torchFlame: '#f97316',
+    torchCore: '#fef08a',
+  },
 };
+
+export interface LevelThreshold {
+  level: number;
+  minScore: number;
+  name: string;
+  subtitle: string;
+  badge: string;
+}
+
+export const LEVEL_THRESHOLDS: LevelThreshold[] = [
+  {
+    level: 1,
+    minScore: 0,
+    name: 'Mountain Forest Trail',
+    subtitle: 'Dawn Forest Trail of Lord Ganesha',
+    badge: '🌲 LEVEL 1',
+  },
+  {
+    level: 2,
+    minScore: 500,
+    name: 'Minecart Railway',
+    subtitle: 'Subterranean Crystal Cavern',
+    badge: '🚂 LEVEL 2',
+  },
+];
 
 export const LEVEL_CONFIGS: LevelConfig[] = [
   {
@@ -170,6 +218,21 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     pandalTheme: 'Sacred Mountain Forest Trail',
     blessingName: 'Vakratunda Mahakaya Mountain Blessing',
     blessingDesc: 'Lord Ganesha showers divine wisdom, obstacle removal, and radiant prosperity upon your journey!',
+  },
+  {
+    id: 2,
+    name: 'Subterranean Minecart Railway',
+    subtitle: 'Underground crystal caverns and railway tracks flanked by sturdy mine timber supports and blazing torches',
+    skyColor: '#0b0f19',
+    groundColor: '#181d27',
+    roadColor: '#1e2430',
+    decorColor: '#d97706',
+    speed: 20,
+    targetDistance: 10000,
+    obstacleTypes: ['STONE_PILLAR', 'WOODEN_CART'],
+    pandalTheme: 'Subterranean Crystal Mine',
+    blessingName: 'Patalavasi Vigneshwara Protection',
+    blessingDesc: 'Lord Ganesha guides your minecart through subterranean depths with blazing divine light!',
   },
 ];
 

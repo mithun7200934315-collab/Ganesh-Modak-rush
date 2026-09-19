@@ -564,6 +564,33 @@ class SoundSystem {
     this.bgmIntervalId = window.setInterval(playRhythmStep, stepDuration * 1000);
   }
 
+  // Triumphant Level Up / Level 2 Transition Fanfare Chime
+  public playLevelUp() {
+    if (!this.soundEnabled) return;
+    this.initContext();
+    if (!this.ctx || !this.sfxGain) return;
+
+    const t = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.5]; // C5, E5, G5, C6 triumphant arpeggio
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx!.createOscillator();
+      const gain = this.ctx!.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t + idx * 0.09);
+
+      gain.gain.setValueAtTime(0, t + idx * 0.09);
+      gain.gain.linearRampToValueAtTime(0.28, t + idx * 0.09 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.09 + 0.7);
+
+      osc.connect(gain);
+      gain.connect(this.sfxGain!);
+
+      osc.start(t + idx * 0.09);
+      osc.stop(t + idx * 0.09 + 0.75);
+    });
+  }
+
   public stopFestiveBGM() {
     this.isBgmPlaying = false;
     if (this.bgmIntervalId !== null) {

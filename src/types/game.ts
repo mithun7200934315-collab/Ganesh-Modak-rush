@@ -98,6 +98,14 @@ export interface LevelConfig {
   blessingDesc: string;
 }
 
+export interface LevelTransitionBanner {
+  level: number;
+  text: string;
+  subtext: string;
+  timer: number;
+  duration: number;
+}
+
 export interface GameState {
   mode: GameMode;
   level: number;
@@ -113,6 +121,7 @@ export interface GameState {
   speedIncreasePauseTimer: number;
   obstaclePauseTimer: number;
   bonusMessage: string | null;
+  levelTransitionBanner: LevelTransitionBanner | null;
   highScore: number;
   totalModaks: number;
   unlockedLevel: number;

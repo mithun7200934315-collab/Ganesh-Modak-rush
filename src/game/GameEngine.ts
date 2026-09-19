@@ -72,6 +72,7 @@ export class GameEngine {
       speedIncreasePauseTimer: 0,
       obstaclePauseTimer: 0,
       bonusMessage: null,
+      levelTransitionBanner: null,
       highScore: storage.getHighScore(),
       totalModaks: storage.getTotalModaks(),
       unlockedLevel: storage.getUnlockedLevel(),
@@ -327,6 +328,16 @@ export class GameEngine {
       this.player.facingAngle = 0;
     }
 
+    // 2b. Level Transition Banner countdown
+    if (this.state.levelTransitionBanner) {
+      this.state.levelTransitionBanner.timer -= clampedDt;
+      if (this.state.levelTransitionBanner.timer <= 0) {
+        this.state.levelTransitionBanner = null;
+        this.notify();
+      }
+    }
+    this.checkLevelProgression();
+
     // 3. Smooth Lane Change Physics
     const dx = this.player.targetX - this.player.x;
     this.player.x += dx * Math.min(1, LANE_CHANGE_SPEED * clampedDt);
@@ -427,6 +438,9 @@ export class GameEngine {
         }
         storage.addTotalModaks(1);
 
+        // Check for score-based Level 2 transition (at 500 points)
+        this.checkLevelProgression();
+
         this.notify();
       }
     }
@@ -451,6 +465,21 @@ export class GameEngine {
         this.triggerGameOver();
         break;
       }
+    }
+  }
+
+  private checkLevelProgression() {
+    if (this.state.score >= 500 && this.state.level < 2) {
+      this.state.level = 2;
+      this.state.levelTransitionBanner = {
+        level: 2,
+        text: '⚡ LEVEL 2 REACHED! ⚡',
+        subtext: 'MINECART RAILWAY',
+        timer: 3.2,
+        duration: 3.2,
+      };
+      soundManager.playLevelUp();
+      this.notify();
     }
   }
 
