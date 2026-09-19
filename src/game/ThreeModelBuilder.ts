@@ -91,6 +91,17 @@ export class ThreeModelBuilder {
   private riverReedMat: THREE.MeshStandardMaterial;
   private waterfallMat: THREE.MeshBasicMaterial;
 
+  // Modern Sport Motorboat Materials (Level 3 Vehicle Upgrade)
+  private motorboatHullMat: THREE.MeshStandardMaterial;
+  private motorboatDeckMat: THREE.MeshStandardMaterial;
+  private motorboatAccentMat: THREE.MeshStandardMaterial;
+  private motorboatChromeMat: THREE.MeshStandardMaterial;
+  private motorboatGlassMat: THREE.MeshStandardMaterial;
+  private motorboatSeatMat: THREE.MeshStandardMaterial;
+  private motorboatEngineMat: THREE.MeshStandardMaterial;
+  private motorboatConsoleMat: THREE.MeshStandardMaterial;
+  private motorboatWakeMat: THREE.MeshBasicMaterial;
+
   // Diya & Lighting Materials
   private diyaBrassMaterial: THREE.MeshStandardMaterial;
   private diyaFlameMat: THREE.MeshBasicMaterial;
@@ -774,6 +785,60 @@ export class ThreeModelBuilder {
       opacity: 0.7,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    // Modern Sport Motorboat Materials
+    this.motorboatHullMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0x0284c7), // Metallic Sapphire Royal Blue
+      metalness: 0.52,
+      roughness: 0.12,
+    });
+    this.motorboatDeckMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xf8fafc), // Pearl White Marine Deck
+      metalness: 0.22,
+      roughness: 0.18,
+    });
+    this.motorboatAccentMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xfbbf24), // Electric Divine Gold Racing Trim
+      metalness: 0.88,
+      roughness: 0.15,
+      emissive: new THREE.Color(0x92400e),
+      emissiveIntensity: 0.25,
+    });
+    this.motorboatChromeMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xffffff), // Mirror-Polished Stainless Steel / Chrome
+      metalness: 0.98,
+      roughness: 0.04,
+    });
+    this.motorboatGlassMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0x38bdf8), // Aerodynamic Tinted Marine Polycarbonate
+      transparent: true,
+      opacity: 0.42,
+      metalness: 0.28,
+      roughness: 0.05,
+    });
+    this.motorboatSeatMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0xc2410c), // Saffron-Caramel Sports Leather
+      metalness: 0.08,
+      roughness: 0.48,
+    });
+    this.motorboatEngineMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0x0f172a), // High-Performance Graphite Outboard Engine
+      metalness: 0.84,
+      roughness: 0.22,
+    });
+    this.motorboatConsoleMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0x020617), // High-Tech Digital Helm Console
+      emissive: new THREE.Color(0x0284c7),
+      emissiveIntensity: 0.45,
+      metalness: 0.5,
+      roughness: 0.2,
+    });
+    this.motorboatWakeMat = new THREE.MeshBasicMaterial({
+      color: 0xe0f2fe, // Frothy River Wake Foam
+      transparent: true,
+      opacity: 0.82,
       depthWrite: false,
     });
   }
@@ -2117,85 +2182,318 @@ export class ThreeModelBuilder {
   }
 
   // =========================================================================
-  // 3D SACRED RIVER BOAT FOR LEVEL 3 (RIVER STREAM)
+  // 3D MODERN SPORT MOTORBOAT FOR LEVEL 3 (RIVER STREAM)
   // =========================================================================
   public createRiverBoat(): THREE.Group {
     const group = new THREE.Group();
-    group.name = 'RIVER_BOAT_GROUP';
+    group.name = 'MODERN_MOTORBOAT_GROUP';
 
-    const boatWidth = 1.36;
-    const boatLength = 2.45;
+    const boatWidth = 1.44;
+    const boatLength = 2.85;
 
-    // 1. Main Curved Wooden Hull (Dark polished teak wood)
-    const hullGeo = new THREE.CylinderGeometry(boatWidth / 2, (boatWidth / 2) * 0.75, boatLength, 16, 1, false);
-    hullGeo.rotateZ(Math.PI / 2);
-    hullGeo.scale(1.0, 0.46, 1.0); // Flatten slightly into canoe/boat shape
-    const hull = new THREE.Mesh(hullGeo, this.minecartWoodMaterial);
-    hull.position.set(0, 0.24, 0);
-    hull.castShadow = true;
-    group.add(hull);
+    // 1. Sleek Aerodynamic Planing V-Hull (Lower Section)
+    // Deep-V keel with flared chines and spray rails
+    const lowerHullGeo = new THREE.CylinderGeometry(
+      boatWidth * 0.46,
+      boatWidth * 0.32,
+      boatLength * 0.85,
+      18,
+      1,
+      false
+    );
+    lowerHullGeo.rotateZ(Math.PI / 2);
+    lowerHullGeo.scale(1.0, 0.48, 1.0);
+    const lowerHull = new THREE.Mesh(lowerHullGeo, this.motorboatHullMat);
+    lowerHull.position.set(0, 0.14, 0.05);
+    lowerHull.castShadow = true;
+    group.add(lowerHull);
 
-    // 2. Upturned Curved Prow (Bow / Front)
-    const bowGeo = new THREE.ConeGeometry((boatWidth / 2) * 0.9, 0.95, 12);
-    bowGeo.rotateX(-Math.PI / 2);
-    bowGeo.scale(1.0, 0.44, 1.0);
-    const bow = new THREE.Mesh(bowGeo, this.minecartWoodMaterial);
-    bow.position.set(0, 0.28, -boatLength / 2 - 0.28);
-    bow.rotation.x = -0.15; // Upward sweep
-    bow.castShadow = true;
-    group.add(bow);
+    // Aerodynamic Sharp Bow Wedge (Forward hull entry cutting cleanly through river water)
+    const bowWedgeGeo = new THREE.ConeGeometry(boatWidth * 0.48, 1.15, 14);
+    bowWedgeGeo.rotateX(-Math.PI / 2);
+    bowWedgeGeo.scale(1.0, 0.44, 1.0);
+    const bowWedge = new THREE.Mesh(bowWedgeGeo, this.motorboatHullMat);
+    bowWedge.position.set(0, 0.18, -boatLength * 0.42 - 0.25);
+    bowWedge.rotation.x = -0.16; // Upward planing sweep
+    bowWedge.castShadow = true;
+    group.add(bowWedge);
 
-    // Golden Lotus Prow Finial / Figurehead
-    const prowLotus = this.createSacredLotus();
-    prowLotus.position.set(0, 0.46, -boatLength / 2 - 0.72);
-    prowLotus.scale.set(0.7, 0.7, 0.7);
-    group.add(prowLotus);
+    // Transom (Rear stern flat wall)
+    const transomGeo = new THREE.BoxGeometry(boatWidth * 0.88, 0.36, 0.12);
+    const transom = new THREE.Mesh(transomGeo, this.motorboatHullMat);
+    transom.position.set(0, 0.22, boatLength * 0.46);
+    transom.rotation.x = 0.14; // Slight backward rake
+    transom.castShadow = true;
+    group.add(transom);
 
-    // 3. Tapered Stern (Rear)
-    const sternGeo = new THREE.ConeGeometry((boatWidth / 2) * 0.85, 0.7, 12);
-    sternGeo.rotateX(Math.PI / 2);
-    sternGeo.scale(1.0, 0.44, 1.0);
-    const stern = new THREE.Mesh(sternGeo, this.minecartWoodMaterial);
-    stern.position.set(0, 0.26, boatLength / 2 + 0.18);
-    stern.rotation.x = 0.12; // Slight upward sweep at stern
-    stern.castShadow = true;
-    group.add(stern);
+    // 2. Molded Pearl White Top Deck with Sculpted Cockpit Well
+    // Foredeck (front upper deck)
+    const foredeckGeo = new THREE.CylinderGeometry(
+      boatWidth * 0.48,
+      boatWidth * 0.46,
+      boatLength * 0.45,
+      18,
+      1,
+      false
+    );
+    foredeckGeo.rotateZ(Math.PI / 2);
+    foredeckGeo.scale(1.0, 0.34, 1.0);
+    const foredeck = new THREE.Mesh(foredeckGeo, this.motorboatDeckMat);
+    foredeck.position.set(0, 0.35, -boatLength * 0.24);
+    group.add(foredeck);
 
-    // 4. Polished Golden Gunwale Rims (Left & Right top rails)
-    const gunwaleGeo = new THREE.CylinderGeometry(0.04, 0.04, boatLength + 0.5, 8);
-    gunwaleGeo.rotateX(Math.PI / 2);
-    const leftGunwale = new THREE.Mesh(gunwaleGeo, this.shinyGoldMaterial);
-    leftGunwale.position.set(-boatWidth / 2 + 0.04, 0.46, -0.05);
-    const rightGunwale = new THREE.Mesh(gunwaleGeo, this.shinyGoldMaterial);
-    rightGunwale.position.set(boatWidth / 2 - 0.04, 0.46, -0.05);
-    group.add(leftGunwale, rightGunwale);
+    // Center Gold Racing Stripe along Foredeck
+    const stripeGeo = new THREE.BoxGeometry(0.18, 0.02, boatLength * 0.75);
+    const stripe = new THREE.Mesh(stripeGeo, this.motorboatAccentMat);
+    stripe.position.set(0, 0.44, -boatLength * 0.22);
+    group.add(stripe);
 
-    // 5. Inner Hollow Deck / Seating Floor
-    const deckGeo = new THREE.PlaneGeometry(boatWidth - 0.2, boatLength - 0.4);
-    deckGeo.rotateX(-Math.PI / 2);
-    const deck = new THREE.Mesh(deckGeo, new THREE.MeshBasicMaterial({ color: 0x1c130c }));
-    deck.position.set(0, 0.18, 0);
-    group.add(deck);
+    // Miniature Golden Sacred Emblem on the Prow Tip
+    const lotusEmblem = this.createSacredLotus();
+    lotusEmblem.position.set(0, 0.38, -boatLength * 0.42 - 0.78);
+    lotusEmblem.scale.set(0.42, 0.42, 0.42);
+    group.add(lotusEmblem);
 
-    // Cross-Thwarts (Wooden Benches for Ganesha and Mooshika)
-    const benchGeo = new THREE.BoxGeometry(boatWidth - 0.1, 0.06, 0.35);
-    const rearBench = new THREE.Mesh(benchGeo, this.minecartWoodMaterial);
-    rearBench.position.set(0, 0.26, 0.14); // Ganesha's seat
-    const frontBench = new THREE.Mesh(benchGeo, this.minecartWoodMaterial);
-    frontBench.position.set(0, 0.26, -0.44); // Mooshika's seat
-    group.add(rearBench, frontBench);
+    // Flush LED Navigation Headlight Strip on Bow
+    const navLightGeo = new THREE.BoxGeometry(0.42, 0.04, 0.06);
+    const navLightMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const navLight = new THREE.Mesh(navLightGeo, navLightMat);
+    navLight.position.set(0, 0.29, -boatLength * 0.42 - 0.68);
+    group.add(navLight);
 
-    // 6. Waterline Foam / Ripple Collar around Boat (cutting through rushing river water)
-    const wakeGeo = new THREE.PlaneGeometry(boatWidth + 0.5, boatLength + 0.9);
+    // Dual Chrome Mooring Cleats on Foredeck
+    [-0.42, 0.42].forEach((cx) => {
+      const cleatGeo = new THREE.BoxGeometry(0.05, 0.03, 0.14);
+      const cleat = new THREE.Mesh(cleatGeo, this.motorboatChromeMat);
+      cleat.position.set(cx, 0.44, -boatLength * 0.28);
+      group.add(cleat);
+    });
+
+    // 3. Polished Chrome Rub-Rail (Continuous Protective Trim Perimeter)
+    const rubRailGeo = new THREE.CylinderGeometry(0.028, 0.028, boatLength * 0.88, 8);
+    rubRailGeo.rotateX(Math.PI / 2);
+    const leftRubRail = new THREE.Mesh(rubRailGeo, this.motorboatChromeMat);
+    leftRubRail.position.set(-boatWidth * 0.49, 0.34, 0.02);
+    const rightRubRail = new THREE.Mesh(rubRailGeo, this.motorboatChromeMat);
+    rightRubRail.position.set(boatWidth * 0.49, 0.34, 0.02);
+    group.add(leftRubRail, rightRubRail);
+
+    // 4. Cockpit Interior & Ergonomic Seating
+    // Recessed Cockpit Floor (Teak/composite deck)
+    const cockpitFloorGeo = new THREE.PlaneGeometry(boatWidth * 0.76, boatLength * 0.44);
+    cockpitFloorGeo.rotateX(-Math.PI / 2);
+    const cockpitFloor = new THREE.Mesh(
+      cockpitFloorGeo,
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 })
+    );
+    cockpitFloor.position.set(0, 0.16, 0.05);
+    group.add(cockpitFloor);
+
+    // Captain's Sports Bucket Seat for Lord Ganesha (Rear)
+    const ganeshaSeatBase = new THREE.BoxGeometry(0.72, 0.08, 0.46);
+    const ganeshaSeat = new THREE.Mesh(ganeshaSeatBase, this.motorboatSeatMat);
+    ganeshaSeat.position.set(0, 0.22, 0.14); // Exactly matches Ganesha's base
+    const ganeshaBackrestGeo = new THREE.BoxGeometry(0.68, 0.38, 0.09);
+    const ganeshaBackrest = new THREE.Mesh(ganeshaBackrestGeo, this.motorboatSeatMat);
+    ganeshaBackrest.position.set(0, 0.42, 0.38);
+    ganeshaBackrest.rotation.x = -0.12;
+    group.add(ganeshaSeat, ganeshaBackrest);
+
+    // Navigator's Bucket Seat for Mooshika (Front)
+    const mushikaSeatBase = new THREE.BoxGeometry(0.52, 0.06, 0.36);
+    const mushikaSeat = new THREE.Mesh(mushikaSeatBase, this.motorboatSeatMat);
+    mushikaSeat.position.set(0, 0.18, -0.42); // Exactly matches Mooshika's base
+    const mushikaBackrestGeo = new THREE.BoxGeometry(0.48, 0.26, 0.07);
+    const mushikaBackrest = new THREE.Mesh(mushikaBackrestGeo, this.motorboatSeatMat);
+    mushikaBackrest.position.set(0, 0.32, -0.25);
+    mushikaBackrest.rotation.x = -0.1;
+    group.add(mushikaSeat, mushikaBackrest);
+
+    // Padded Cockpit Side Bolsters / Armrests
+    [-0.48, 0.48].forEach((bx) => {
+      const bolsterGeo = new THREE.BoxGeometry(0.08, 0.12, boatLength * 0.42);
+      const bolster = new THREE.Mesh(bolsterGeo, this.motorboatSeatMat);
+      bolster.position.set(bx, 0.32, 0.05);
+      group.add(bolster);
+
+      // Stainless Steel Passenger Grab Rail
+      const grabRailGeo = new THREE.CylinderGeometry(0.016, 0.016, 0.65, 6);
+      grabRailGeo.rotateX(Math.PI / 2);
+      const grabRail = new THREE.Mesh(grabRailGeo, this.motorboatChromeMat);
+      grabRail.position.set(bx * 0.94, 0.42, 0.05);
+      group.add(grabRail);
+    });
+
+    // 5. Helm / Steering Console & Dashboard
+    const helmPodGeo = new THREE.BoxGeometry(0.65, 0.24, 0.22);
+    const helmPod = new THREE.Mesh(helmPodGeo, this.motorboatConsoleMat);
+    helmPod.position.set(0, 0.40, -0.16);
+    helmPod.rotation.x = -0.32; // Slanted towards Ganesha
+    group.add(helmPod);
+
+    // Glowing Digital Multi-Gauge Screen
+    const screenGeo = new THREE.PlaneGeometry(0.44, 0.12);
+    const screenMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    const screen = new THREE.Mesh(screenGeo, screenMat);
+    screen.position.set(0, 0.46, -0.14);
+    screen.rotation.x = -0.32;
+    group.add(screen);
+
+    // 3-Spoke Sport Marine Steering Wheel (interactive)
+    const wheelGroup = new THREE.Group();
+    wheelGroup.position.set(-0.12, 0.48, -0.11);
+    wheelGroup.rotation.x = -0.42;
+
+    const rimGeo = new THREE.TorusGeometry(0.11, 0.018, 8, 20);
+    const wheelRim = new THREE.Mesh(rimGeo, this.hairMaterial); // Black leather rim
+    wheelGroup.add(wheelRim);
+
+    // 3 Chrome Spokes & Center Hub
+    const hubGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.02, 12);
+    hubGeo.rotateX(Math.PI / 2);
+    const wheelHub = new THREE.Mesh(hubGeo, this.motorboatChromeMat);
+    wheelGroup.add(wheelHub);
+
+    for (let s = 0; s < 3; s++) {
+      const spGeo = new THREE.BoxGeometry(0.018, 0.10, 0.012);
+      const spoke = new THREE.Mesh(spGeo, this.motorboatChromeMat);
+      spoke.rotation.z = (s * Math.PI * 2) / 3;
+      spoke.position.set(
+        Math.sin((s * Math.PI * 2) / 3) * 0.05,
+        Math.cos((s * Math.PI * 2) / 3) * 0.05,
+        0
+      );
+      wheelGroup.add(spoke);
+    }
+    group.add(wheelGroup);
+    group.userData.steeringWheel = wheelGroup;
+
+    // Throttle Control Lever on Starboard Side
+    const throttleBaseGeo = new THREE.BoxGeometry(0.06, 0.04, 0.12);
+    const throttleBase = new THREE.Mesh(throttleBaseGeo, this.motorboatConsoleMat);
+    throttleBase.position.set(0.26, 0.42, -0.12);
+    const throttleLeverGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.10, 6);
+    const throttleLever = new THREE.Mesh(throttleLeverGeo, this.motorboatChromeMat);
+    throttleLever.position.set(0.26, 0.48, -0.12);
+    throttleLever.rotation.x = 0.45; // Forward throttle position
+    group.add(throttleBase, throttleLever);
+
+    // 6. Aerodynamic Curved Windshield
+    const windshieldGeo = new THREE.CylinderGeometry(
+      boatWidth * 0.48,
+      boatWidth * 0.48,
+      0.22,
+      18,
+      1,
+      true,
+      -Math.PI * 0.42,
+      Math.PI * 0.84
+    );
+    windshieldGeo.scale(1.0, 1.0, 0.55);
+    const windshield = new THREE.Mesh(windshieldGeo, this.motorboatGlassMat);
+    windshield.position.set(0, 0.52, -0.22);
+    windshield.rotation.x = -0.38; // Sleek backward rake
+    group.add(windshield);
+
+    // Polished Chrome Windshield Top Trim Frame
+    const wsFrameGeo = new THREE.TorusGeometry(boatWidth * 0.46, 0.016, 6, 20, Math.PI * 0.78);
+    wsFrameGeo.scale(1.0, 0.52, 1.0);
+    const wsFrame = new THREE.Mesh(wsFrameGeo, this.motorboatChromeMat);
+    wsFrame.position.set(0, 0.61, -0.24);
+    wsFrame.rotation.x = Math.PI / 2 - 0.38;
+    group.add(wsFrame);
+
+    // 7. Modern High-Performance Outboard Motor (Engine)
+    const engineGroup = new THREE.Group();
+    engineGroup.position.set(0, 0.28, boatLength * 0.48); // Mounted on transom
+
+    // Swivel Mounting Bracket
+    const bracketGeo = new THREE.BoxGeometry(0.24, 0.20, 0.14);
+    const bracket = new THREE.Mesh(bracketGeo, this.motorboatEngineMat);
+    bracket.position.set(0, 0, 0);
+    engineGroup.add(bracket);
+
+    // Streamlined Engine Cowling (Upper Hood)
+    const cowlGeo = new THREE.BoxGeometry(0.32, 0.42, 0.48);
+    const cowl = new THREE.Mesh(cowlGeo, this.motorboatEngineMat);
+    cowl.position.set(0, 0.26, 0.18);
+    cowl.castShadow = true;
+    engineGroup.add(cowl);
+
+    // Gold Racing Decal Band on Engine Cowling
+    const engineDecalGeo = new THREE.BoxGeometry(0.33, 0.08, 0.49);
+    const engineDecal = new THREE.Mesh(engineDecalGeo, this.motorboatAccentMat);
+    engineDecal.position.set(0, 0.32, 0.18);
+    engineGroup.add(engineDecal);
+
+    // Midsection Exhaust Housing (Shaft)
+    const shaftGeo = new THREE.CylinderGeometry(0.09, 0.07, 0.38, 8);
+    const shaft = new THREE.Mesh(shaftGeo, this.motorboatEngineMat);
+    shaft.position.set(0, -0.08, 0.18);
+    engineGroup.add(shaft);
+
+    // Lower Torpedo Gearcase & Skeg
+    const torpedoGeo = new THREE.CylinderGeometry(0.065, 0.055, 0.34, 10);
+    torpedoGeo.rotateX(Math.PI / 2);
+    const torpedo = new THREE.Mesh(torpedoGeo, this.motorboatEngineMat);
+    torpedo.position.set(0, -0.26, 0.22);
+    engineGroup.add(torpedo);
+
+    // Bottom Skeg (Fin)
+    const skegGeo = new THREE.BoxGeometry(0.024, 0.14, 0.22);
+    const skeg = new THREE.Mesh(skegGeo, this.motorboatEngineMat);
+    skeg.position.set(0, -0.34, 0.22);
+    engineGroup.add(skeg);
+
+    // 3-Blade Polished Chrome Propeller
+    const propellerGroup = new THREE.Group();
+    propellerGroup.position.set(0, -0.26, 0.38);
+
+    const propHubGeo = new THREE.CylinderGeometry(0.04, 0.025, 0.08, 10);
+    propHubGeo.rotateX(Math.PI / 2);
+    const propHub = new THREE.Mesh(propHubGeo, this.motorboatChromeMat);
+    propellerGroup.add(propHub);
+
+    for (let p = 0; p < 3; p++) {
+      const bladeGeo = new THREE.BoxGeometry(0.04, 0.14, 0.015);
+      const blade = new THREE.Mesh(bladeGeo, this.motorboatChromeMat);
+      blade.rotation.z = (p * Math.PI * 2) / 3;
+      blade.rotation.x = 0.32; // Propeller pitch angle
+      blade.position.set(
+        Math.sin((p * Math.PI * 2) / 3) * 0.07,
+        Math.cos((p * Math.PI * 2) / 3) * 0.07,
+        0
+      );
+      propellerGroup.add(blade);
+    }
+    engineGroup.add(propellerGroup);
+    group.userData.propeller = propellerGroup;
+
+    // Twin Chrome Water Cooling / Exhaust Outlets
+    [-0.08, 0.08].forEach((ex) => {
+      const exhaustGeo = new THREE.CylinderGeometry(0.022, 0.022, 0.06, 6);
+      exhaustGeo.rotateX(Math.PI / 2);
+      const exhaust = new THREE.Mesh(exhaustGeo, this.motorboatChromeMat);
+      exhaust.position.set(ex, -0.16, 0.34);
+      engineGroup.add(exhaust);
+    });
+
+    group.add(engineGroup);
+    group.userData.engine = engineGroup;
+
+    // 8. Transom Swim Platform
+    const swimPlatformGeo = new THREE.BoxGeometry(boatWidth * 0.78, 0.04, 0.28);
+    const swimPlatform = new THREE.Mesh(swimPlatformGeo, this.motorboatDeckMat);
+    swimPlatform.position.set(0, 0.16, boatLength * 0.48 + 0.12);
+    group.add(swimPlatform);
+
+    // 9. Dynamic V-Shaped River Wake Foam Mesh
+    const wakeGeo = new THREE.PlaneGeometry(boatWidth * 1.8, boatLength * 1.6);
     wakeGeo.rotateX(-Math.PI / 2);
-    const wake = new THREE.Mesh(wakeGeo, this.waterFoamMat);
-    wake.position.set(0, 0.04, -0.15);
+    const wake = new THREE.Mesh(wakeGeo, this.motorboatWakeMat);
+    wake.position.set(0, 0.038, 0.85); // Trailing behind boat at water surface
     group.add(wake);
-
-    // 7. Front Brass Lantern mounted on Prow for river illumination
-    const lantern = this.createFrontObstacleLantern(0.85);
-    lantern.position.set(0, 0.52, -boatLength / 2 - 0.4);
-    group.add(lantern);
+    group.userData.wakeMesh = wake;
 
     return group;
   }

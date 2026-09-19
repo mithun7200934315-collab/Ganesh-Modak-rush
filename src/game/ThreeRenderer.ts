@@ -39,6 +39,10 @@ export class ThreeRenderer {
   private minecartGroup: THREE.Group | null = null;
   private minecartWheels: THREE.Mesh[] = [];
   private boatGroup: THREE.Group | null = null;
+  private motorboatEngine: THREE.Group | null = null;
+  private motorboatPropeller: THREE.Group | null = null;
+  private motorboatSteeringWheel: THREE.Group | null = null;
+  private motorboatWake: THREE.Mesh | null = null;
 
   // Ambient Falling Leaves (Task 1: Foreground / Ambience)
   private leafGeo!: THREE.BufferGeometry;
@@ -272,6 +276,12 @@ export class ThreeRenderer {
     this.minecartGroup = char.minecartGroup;
     this.minecartWheels = char.minecartWheels;
     this.boatGroup = char.boatGroup || null;
+    if (this.boatGroup) {
+      this.motorboatEngine = (this.boatGroup.userData.engine as THREE.Group) || null;
+      this.motorboatPropeller = (this.boatGroup.userData.propeller as THREE.Group) || null;
+      this.motorboatSteeringWheel = (this.boatGroup.userData.steeringWheel as THREE.Group) || null;
+      this.motorboatWake = (this.boatGroup.userData.wakeMesh as THREE.Mesh) || null;
+    }
     this.scene.add(this.playerRoot);
 
     // Soft grounded contact shadow under Mooshika and Lord Ganesha (0 extra draw passes)
@@ -710,7 +720,7 @@ export class ThreeRenderer {
 
       // Character, Minecart & Boat Animations
       if (isLevel3) {
-        // --- LEVEL 3: RIDING IN BOAT ON RIVER STREAM ---
+        // --- LEVEL 3: RIDING IN MODERN SPORT MOTORBOAT ON RIVER STREAM ---
         if (this.boatGroup) {
           this.boatGroup.visible = true;
         }
@@ -718,44 +728,83 @@ export class ThreeRenderer {
           this.minecartGroup.visible = false;
         }
 
-        // Boat bobbing, pitching, and rolling with rushing river current
-        const boatBob = Math.sin(time * 3.5 + runCycle * 0.4) * 0.02;
-        const boatPitch = Math.sin(time * 2.8) * 0.015;
-        const boatRoll = Math.cos(time * 2.2) * 0.018;
+        // 1. Dynamic Planing Hull Physics & Speed Calculations
+        const speedRatio = Math.max(1.0, _state.speed / 18.0);
+        // Planing bow lift (forward tilt): motorboat bow rises as speed increases
+        const planingPitch = -0.045 - (speedRatio - 1.0) * 0.025;
+        // Water chop bounce (high-frequency wave impacts against V-hull)
+        const chopBounce = Math.sin(time * 11.0 + runCycle * 0.7) * 0.014 * speedRatio;
+        // Rhythmic river swell bobbing
+        const swellBob = Math.sin(time * 3.4) * 0.018;
+        const totalBob = swellBob + chopBounce;
+
+        // Dynamic banking into turns (lane switching)
+        const turnRoll = -player.tiltAngle * 1.5;
+        const waveRoll = Math.cos(time * 3.0) * 0.015;
+        const totalRoll = turnRoll + waveRoll;
+        const totalPitch = planingPitch + Math.sin(time * 5.5) * 0.012;
+
         if (this.boatGroup) {
-          this.boatGroup.position.set(0, boatBob, 0);
-          this.boatGroup.rotation.set(boatPitch, 0, boatRoll);
+          this.boatGroup.position.set(0, totalBob, 0);
+          this.boatGroup.rotation.set(totalPitch, 0, totalRoll);
         }
 
-        // Lord Ganesha seated inside the boat
+        // 2. Engine Pivot, Micro-Vibration & Propeller Spin
+        if (this.motorboatEngine) {
+          // Engine pivots with steering direction
+          this.motorboatEngine.rotation.y = player.tiltAngle * 1.6;
+          // High-frequency engine idle/rev vibration
+          this.motorboatEngine.position.y = 0.28 + Math.sin(time * 52.0) * 0.0025;
+        }
+
+        if (this.motorboatPropeller) {
+          // Propeller spins with forward velocity
+          this.motorboatPropeller.rotation.z += dt * _state.speed * 14.0;
+        }
+
+        if (this.motorboatSteeringWheel) {
+          // Steering wheel turns with player lane change
+          this.motorboatSteeringWheel.rotation.z = -player.tiltAngle * 2.8;
+        }
+
+        // 3. Dynamic Water Wake Foam Pulsing
+        if (this.motorboatWake) {
+          const wakePulse = 1.0 + Math.sin(time * 7.5) * 0.06;
+          this.motorboatWake.scale.set(wakePulse, 1.0, 1.0 + (speedRatio - 1.0) * 0.4);
+        }
+
+        // 4. Lord Ganesha Seated Comfortably in Captain's Bucket Seat
         if (this.ganeshaGroup) {
           this.ganeshaGroup.visible = true;
           if (player.state === 'SLIDING') {
-            this.ganeshaGroup.position.set(0, 0.28, 0.14);
-            this.ganeshaGroup.rotation.x = 0.28;
+            this.ganeshaGroup.position.set(0, 0.26 + totalBob, 0.14);
+            this.ganeshaGroup.rotation.x = 0.22 + totalPitch;
+            this.ganeshaGroup.rotation.z = totalRoll;
           } else if (player.state === 'JUMPING' || !player.isGrounded) {
-            this.ganeshaGroup.position.set(0, 0.48, 0.14);
-            this.ganeshaGroup.rotation.x = 0.08;
+            this.ganeshaGroup.position.set(0, 0.44 + totalBob, 0.14);
+            this.ganeshaGroup.rotation.x = 0.06 + totalPitch;
+            this.ganeshaGroup.rotation.z = totalRoll;
           } else {
-            this.ganeshaGroup.position.set(0, 0.38 + boatBob, 0.14);
-            this.ganeshaGroup.rotation.set(boatPitch, 0, boatRoll);
+            this.ganeshaGroup.position.set(0, 0.36 + totalBob, 0.14);
+            this.ganeshaGroup.rotation.set(totalPitch, 0, totalRoll);
           }
         }
 
-        // Mushika seated inside front of boat
+        // 5. Mushika Seated Inside Front Navigator Seat
         if (this.mooshikaGroup) {
           this.mooshikaGroup.visible = true;
           if (player.state === 'SLIDING') {
-            this.mooshikaGroup.position.set(0, 0.18, -0.42);
+            this.mooshikaGroup.position.set(0, 0.16 + totalBob, -0.42);
             this.mooshikaGroup.scale.set(1.1, 0.65, 1.1);
+            this.mooshikaGroup.rotation.set(totalPitch, 0, totalRoll);
           } else {
-            this.mooshikaGroup.position.set(0, 0.24 + boatBob, -0.42);
-            this.mooshikaGroup.rotation.set(boatPitch, 0, boatRoll);
+            this.mooshikaGroup.position.set(0, 0.22 + totalBob, -0.42);
+            this.mooshikaGroup.rotation.set(totalPitch, 0, totalRoll);
             this.mooshikaGroup.scale.set(1, 1, 1);
           }
         }
 
-        // Paws tucked safely inside boat
+        // Paws tucked safely inside boat cockpit
         for (let l = 0; l < this.playerLegs.length; l++) {
           this.playerLegs[l].visible = false;
         }
@@ -935,10 +984,16 @@ export class ThreeRenderer {
         }
       } else if (isLevel3 && player.isGrounded && _state.mode === 'PLAYING') {
         this.splashTimer += dt;
-        if (this.splashTimer >= 0.06) {
+        const sprayInterval = Math.max(0.03, 0.07 - (_state.speedMultiplier || 1.0) * 0.015);
+        if (this.splashTimer >= sprayInterval) {
           this.splashTimer = 0;
-          const pawSide = (Math.random() - 0.5) * 0.7;
-          this.spawnWaterSplash(player.x + pawSide, 0.06, player.z + 0.35);
+          // 1. Energetic Stern Motor Rooster Tail Spray (directly behind propeller)
+          const propX = player.x + (Math.random() - 0.5) * 0.25;
+          this.spawnWaterSplash(propX, 0.08, player.z + 1.45, 1.4);
+
+          // 2. Dual Bow Spray Curtains (sheeting off left and right chines)
+          const bowSpraySide = Math.random() > 0.5 ? -0.65 : 0.65;
+          this.spawnWaterSplash(player.x + bowSpraySide, 0.06, player.z - 0.55, 0.9);
         }
       }
 
