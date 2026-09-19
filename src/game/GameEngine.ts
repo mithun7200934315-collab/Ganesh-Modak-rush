@@ -12,6 +12,7 @@ import {
   MEGA_MODAK_BONUS_POINTS,
   MEGA_MODAK_SPEED_PAUSE_DURATION,
   MEGA_MODAK_ANIM_DURATION,
+  LEVEL_THRESHOLDS,
 } from './constants';
 import type {
   GameState,
@@ -207,13 +208,20 @@ export class GameEngine {
 
     // Pick how many lanes have obstacles: 1 or at most 2 (never all 3, ensuring clear path)
     const numObstacles = Math.random() < 0.65 ? 1 : 2;
-    const obstacleTypes: ObstacleType[] = ['STONE_PILLAR', 'WOODEN_CART'];
+
+    // Level-specific obstacle types: Level 3+ uses natural river stream obstacles
+    let obstacleTypes: ObstacleType[];
+    if (this.state.level >= 3) {
+      obstacleTypes = ['RIVER_BOULDER', 'FALLEN_LOG', 'RIVER_BRANCHES'];
+    } else {
+      obstacleTypes = ['STONE_PILLAR', 'WOODEN_CART'];
+    }
 
     // Don't put obstacles in the Mega Modak lane
     const availableObstacleLanes = shuffledLanes.filter((l) => l !== megaModakLane);
     const obstacleLanes = availableObstacleLanes.slice(0, numObstacles);
 
-    // Place ancient stone pillars and stationary wooden carts
+    // Place ancient stone pillars, stationary wooden carts, or river boulders/fallen logs
     for (const lane of obstacleLanes) {
       const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
       const x = LANES_X[lane + 1];
@@ -230,6 +238,18 @@ export class GameEngine {
         width = 1.4;
         height = 0.82;
         depth = 1.1;
+      } else if (type === 'RIVER_BOULDER') {
+        width = 1.5;
+        height = 1.4;
+        depth = 1.4;
+      } else if (type === 'FALLEN_LOG') {
+        width = 2.1;
+        height = 0.85; // Low enough to jump over
+        depth = 1.1;
+      } else if (type === 'RIVER_BRANCHES') {
+        width = 1.6;
+        height = 1.2;
+        depth = 0.9;
       }
 
       this.obstacles.push({
@@ -469,14 +489,26 @@ export class GameEngine {
   }
 
   private checkLevelProgression() {
-    if (this.state.score >= 500 && this.state.level < 2) {
-      this.state.level = 2;
+    // Check highest qualified level from modular LEVEL_THRESHOLDS
+    let targetLevel = 1;
+    let targetThreshold = LEVEL_THRESHOLDS[0];
+    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+      if (this.state.score >= LEVEL_THRESHOLDS[i].minScore) {
+        targetLevel = LEVEL_THRESHOLDS[i].level;
+        targetThreshold = LEVEL_THRESHOLDS[i];
+        break;
+      }
+    }
+
+    if (targetLevel > this.state.level) {
+      this.state.level = targetLevel;
+      const bannerEmoji = targetLevel === 2 ? '⚡' : targetLevel === 3 ? '🌊' : '⭐';
       this.state.levelTransitionBanner = {
-        level: 2,
-        text: '⚡ LEVEL 2 REACHED! ⚡',
-        subtext: 'MINECART RAILWAY',
-        timer: 3.2,
-        duration: 3.2,
+        level: targetLevel,
+        text: `${bannerEmoji} LEVEL ${targetLevel} REACHED! ${bannerEmoji}`,
+        subtext: targetThreshold.name.toUpperCase(),
+        timer: 3.5,
+        duration: 3.5,
       };
       soundManager.playLevelUp();
       this.notify();

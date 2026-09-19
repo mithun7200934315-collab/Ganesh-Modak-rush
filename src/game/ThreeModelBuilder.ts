@@ -72,6 +72,21 @@ export class ThreeModelBuilder {
   private torchFlameCoreMat: THREE.MeshBasicMaterial;
   private torchLightPoolMat: THREE.MeshBasicMaterial;
 
+  // Level 3: Sacred River Stream Materials & Textures
+  public waterTexture: THREE.CanvasTexture | null = null;
+  private waterMaterial: THREE.MeshStandardMaterial;
+  private riverbedMaterial: THREE.MeshStandardMaterial;
+  private riverbankGrassMat: THREE.MeshStandardMaterial;
+  private mossyBoulderMat: THREE.MeshStandardMaterial;
+  private fallenLogMat: THREE.MeshStandardMaterial;
+  private driftwoodMat: THREE.MeshStandardMaterial;
+  private waterRippleMat: THREE.MeshBasicMaterial;
+  private waterFoamMat: THREE.MeshBasicMaterial;
+  private riverLotusMat: THREE.MeshStandardMaterial;
+  private riverLilyPadMat: THREE.MeshStandardMaterial;
+  private riverReedMat: THREE.MeshStandardMaterial;
+  private waterfallMat: THREE.MeshBasicMaterial;
+
   // Diya & Lighting Materials
   private diyaBrassMaterial: THREE.MeshStandardMaterial;
   private diyaFlameMat: THREE.MeshBasicMaterial;
@@ -165,6 +180,10 @@ export class ThreeModelBuilder {
   private static cachedCavernRockTexture: THREE.CanvasTexture | null = null;
   private static cachedBallastTexture: THREE.CanvasTexture | null = null;
   private static cachedWoodPlankTexture: THREE.CanvasTexture | null = null;
+  private static cachedWaterTexture: THREE.CanvasTexture | null = null;
+  private static cachedRiverbedTexture: THREE.CanvasTexture | null = null;
+  private static cachedMossyRockTexture: THREE.CanvasTexture | null = null;
+  private static cachedFallenLogTexture: THREE.CanvasTexture | null = null;
 
   constructor() {
     this.initStaticTextures();
@@ -645,6 +664,100 @@ export class ThreeModelBuilder {
     this.sleeperGeo = new THREE.BoxGeometry(1.36, 0.08, 0.22);
     this.crystalGeo = new THREE.ConeGeometry(0.18, 0.75, 6);
     this.stalactiteGeo = new THREE.ConeGeometry(0.45, 3.2, 7);
+
+    // 8. Level 3: Sacred River Stream Materials
+    this.waterTexture = ThreeModelBuilder.cachedWaterTexture;
+    this.waterMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#38bdf8'),
+      map: ThreeModelBuilder.cachedWaterTexture,
+      roughness: 0.12,
+      metalness: 0.18,
+      transparent: true,
+      opacity: 0.88,
+      depthWrite: false,
+    });
+
+    this.riverbedMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#0c4a6e'),
+      map: ThreeModelBuilder.cachedRiverbedTexture,
+      roughness: 0.85,
+      metalness: 0.08,
+    });
+
+    this.riverbankGrassMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#15803d'),
+      roughness: 0.72,
+      metalness: 0.05,
+    });
+
+    this.mossyBoulderMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#334155'),
+      map: ThreeModelBuilder.cachedMossyRockTexture,
+      roughness: 0.68,
+      metalness: 0.12,
+      flatShading: true,
+    });
+
+    this.fallenLogMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#451a03'),
+      map: ThreeModelBuilder.cachedFallenLogTexture,
+      roughness: 0.88,
+      metalness: 0.06,
+    });
+
+    this.driftwoodMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#78350f'),
+      roughness: 0.9,
+      metalness: 0.04,
+    });
+
+    this.waterRippleMat = new THREE.MeshBasicMaterial({
+      color: 0xbae6fd,
+      transparent: true,
+      opacity: 0.65,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    this.waterFoamMat = new THREE.MeshBasicMaterial({
+      color: 0xf0fdf4,
+      transparent: true,
+      opacity: 0.75,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+
+    this.riverLotusMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#f472b6'),
+      roughness: 0.35,
+      metalness: 0.1,
+      emissive: new THREE.Color('#ec4899'),
+      emissiveIntensity: 0.3,
+    });
+
+    this.riverLilyPadMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#16a34a'),
+      roughness: 0.55,
+      metalness: 0.05,
+      side: THREE.DoubleSide,
+    });
+
+    this.riverReedMat = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#65a30d'),
+      roughness: 0.65,
+      metalness: 0.05,
+    });
+
+    this.waterfallMat = new THREE.MeshBasicMaterial({
+      color: 0xe0f2fe,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
   }
 
   // =========================================================================
@@ -1304,6 +1417,155 @@ export class ThreeModelBuilder {
       ThreeModelBuilder.cachedWoodPlankTexture = new THREE.CanvasTexture(canvas);
       ThreeModelBuilder.cachedWoodPlankTexture.wrapS = THREE.RepeatWrapping;
       ThreeModelBuilder.cachedWoodPlankTexture.wrapT = THREE.RepeatWrapping;
+    }
+
+    // 12. Flowing Crystal River Water Texture (Level 3)
+    if (!ThreeModelBuilder.cachedWaterTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Deep turquoise blue base
+        const grad = ctx.createLinearGradient(0, 0, 0, 512);
+        grad.addColorStop(0, '#0284c7');
+        grad.addColorStop(0.5, '#0ea5e9');
+        grad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Flowing water wavelets & caustic patterns
+        for (let w = 0; w < 45; w++) {
+          const wy = Math.random() * 512;
+          const wh = 8 + Math.random() * 18;
+          ctx.fillStyle = Math.random() > 0.4 ? 'rgba(56, 189, 248, 0.45)' : 'rgba(224, 242, 254, 0.55)';
+          ctx.beginPath();
+          ctx.moveTo(0, wy);
+          for (let x = 0; x <= 512; x += 32) {
+            const waveY = wy + Math.sin(x * 0.04 + w) * wh;
+            ctx.lineTo(x, waveY);
+          }
+          ctx.lineTo(512, wy + 4);
+          ctx.lineTo(0, wy + 4);
+          ctx.fill();
+        }
+
+        // Shimmering white river foam crests
+        for (let f = 0; f < 30; f++) {
+          const fx = Math.random() * 512;
+          const fy = Math.random() * 512;
+          const flen = 20 + Math.random() * 45;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+          ctx.lineWidth = 2 + Math.random() * 2;
+          ctx.beginPath();
+          ctx.moveTo(fx, fy);
+          ctx.quadraticCurveTo(fx + flen / 2, fy - 6, fx + flen, fy);
+          ctx.stroke();
+        }
+      }
+      ThreeModelBuilder.cachedWaterTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedWaterTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedWaterTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedWaterTexture.repeat.set(3, 10);
+    }
+
+    // 13. Riverbed Pebble & Sand Texture (Level 3)
+    if (!ThreeModelBuilder.cachedRiverbedTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#0c4a6e';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Smooth river pebbles and silt
+        for (let p = 0; p < 2000; p++) {
+          const px = Math.random() * 512;
+          const py = Math.random() * 512;
+          const pr = 2 + Math.random() * 6;
+          const pshades = ['#075985', '#0369a1', '#0284c7', '#164e63', '#1e293b', '#334155'];
+          ctx.fillStyle = pshades[Math.floor(Math.random() * pshades.length)];
+          ctx.beginPath();
+          ctx.ellipse(px, py, pr, pr * 0.75, Math.random() * Math.PI, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ThreeModelBuilder.cachedRiverbedTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedRiverbedTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedRiverbedTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedRiverbedTexture.repeat.set(2, 6);
+    }
+
+    // 14. Wet Mossy River Rock Texture (Level 3)
+    if (!ThreeModelBuilder.cachedMossyRockTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Lush green river moss clusters
+        for (let m = 0; m < 50; m++) {
+          const mx = Math.random() * 512;
+          const my = Math.random() * 512;
+          const mr = 20 + Math.random() * 45;
+          const mshades = ['#15803d', '#166534', '#14532d', '#22c55e', '#16a34a'];
+          ctx.fillStyle = mshades[Math.floor(Math.random() * mshades.length)];
+          ctx.beginPath();
+          ctx.arc(mx, my, mr, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Wet stone highlights
+        for (let i = 0; i < 600; i++) {
+          const sx = Math.random() * 512;
+          const sy = Math.random() * 512;
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+          ctx.fillRect(sx, sy, 2, 2);
+        }
+      }
+      ThreeModelBuilder.cachedMossyRockTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedMossyRockTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedMossyRockTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedMossyRockTexture.repeat.set(2, 2);
+    }
+
+    // 15. Weathered Wet Fallen Tree Trunk Bark (Level 3)
+    if (!ThreeModelBuilder.cachedFallenLogTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#3e2723';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Dark rough bark grooves
+        for (let y = 0; y < 512; y += 12) {
+          ctx.strokeStyle = Math.random() > 0.5 ? '#1a0f08' : '#271406';
+          ctx.lineWidth = 3 + Math.random() * 3;
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(512, y + (Math.random() - 0.5) * 8);
+          ctx.stroke();
+        }
+
+        // Moss growing on the bark
+        for (let m = 0; m < 35; m++) {
+          const mx = Math.random() * 512;
+          const my = Math.random() * 512;
+          ctx.fillStyle = 'rgba(22, 101, 52, 0.7)';
+          ctx.beginPath();
+          ctx.ellipse(mx, my, 25 + Math.random() * 20, 8 + Math.random() * 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ThreeModelBuilder.cachedFallenLogTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedFallenLogTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedFallenLogTexture.wrapT = THREE.RepeatWrapping;
     }
   }
 
@@ -2420,6 +2682,178 @@ export class ThreeModelBuilder {
   }
 
   // =========================================================================
+  // LEVEL 3 OBSTACLES: MOSSY RIVER BOULDER, FALLEN LOG & TANGLED BRANCHES
+  // =========================================================================
+
+  // Level 3 Obstacle: Mossy River Boulder with Water Ripple Foam
+  public createRiverBoulder(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'RIVER_BOULDER';
+
+    // Main jagged boulder
+    const rockGeo = new THREE.DodecahedronGeometry(0.85, 1);
+    const pos = rockGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const vx = pos.getX(i);
+      const vy = pos.getY(i);
+      const vz = pos.getZ(i);
+      const noise = 1 + Math.sin(vx * 3 + vy * 4) * 0.15;
+      pos.setXYZ(i, vx * noise * 1.05, vy * noise * 0.95, vz * noise);
+    }
+    rockGeo.computeVertexNormals();
+
+    const mainRock = new THREE.Mesh(rockGeo, this.mossyBoulderMat);
+    mainRock.position.set(0, 0.72, 0);
+    mainRock.rotation.set(0.3, 0.5, 0.2);
+    mainRock.castShadow = true;
+    group.add(mainRock);
+
+    // Secondary smaller cluster rock
+    const subGeo = new THREE.DodecahedronGeometry(0.52, 1);
+    const subRock = new THREE.Mesh(subGeo, this.mossyBoulderMat);
+    subRock.position.set(0.55, 0.42, 0.25);
+    subRock.castShadow = true;
+    group.add(subRock);
+
+    // Water Ripple / Foam Ring around base where rushing river hits boulder
+    const rippleGeo = new THREE.RingGeometry(0.75, 1.35, 16);
+    rippleGeo.rotateX(-Math.PI / 2);
+    const ripple = new THREE.Mesh(rippleGeo, this.waterRippleMat);
+    ripple.position.set(0.1, 0.04, 0.05);
+    group.add(ripple);
+
+    // Front-mounted river warning lantern
+    const lantern = this.createFrontObstacleLantern(0.85);
+    lantern.position.set(0, 0.65, 0.75);
+    const pool = lantern.getObjectByName('OBSTACLE_LIGHT_POOL');
+    if (pool) pool.position.set(0, -0.6, 0.85);
+    group.add(lantern);
+
+    group.userData.flames = [lantern.userData.flame];
+    return group;
+  }
+
+  // Level 3 Obstacle: Mossy Fallen Tree Trunk (Jumpable height: 0.85m)
+  public createFallenLog(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'FALLEN_LOG';
+
+    // Horizontal Fallen Tree Trunk spanning across the lane
+    const logRadius = 0.42;
+    const logLength = 2.1;
+    const logGeo = new THREE.CylinderGeometry(logRadius * 0.9, logRadius * 1.05, logLength, 12);
+    logGeo.rotateZ(Math.PI / 2); // Lay horizontal across lane (X axis)
+
+    const logMesh = new THREE.Mesh(logGeo, this.fallenLogMat);
+    logMesh.position.set(0, logRadius, 0);
+    logMesh.castShadow = true;
+    group.add(logMesh);
+
+    // Jagged broken end caps with exposed heartwood
+    const capGeo = new THREE.CircleGeometry(logRadius * 0.9, 10);
+    capGeo.rotateY(-Math.PI / 2);
+    const leftCap = new THREE.Mesh(capGeo, this.driftwoodMat);
+    leftCap.position.set(-logLength / 2 - 0.01, logRadius, 0);
+
+    const rightCap = new THREE.Mesh(capGeo, this.driftwoodMat);
+    rightCap.position.set(logLength / 2 + 0.01, logRadius, 0);
+    rightCap.rotation.y = Math.PI;
+    group.add(leftCap, rightCap);
+
+    // Broken branch stubs sticking out
+    const stubGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.45, 6);
+    const stub1 = new THREE.Mesh(stubGeo, this.driftwoodMat);
+    stub1.position.set(-0.5, logRadius + 0.28, 0.12);
+    stub1.rotation.set(0.4, 0, -0.3);
+
+    const stub2 = new THREE.Mesh(stubGeo, this.driftwoodMat);
+    stub2.position.set(0.4, logRadius + 0.26, -0.15);
+    stub2.rotation.set(-0.35, 0, 0.25);
+    group.add(stub1, stub2);
+
+    // Green moss patch on top of trunk
+    const mossGeo = new THREE.PlaneGeometry(1.4, 0.45);
+    mossGeo.rotateX(-Math.PI / 2);
+    const moss = new THREE.Mesh(mossGeo, this.riverbankGrassMat);
+    moss.position.set(0, logRadius * 2 + 0.01, 0);
+    group.add(moss);
+
+    // Water foam strips along the water line
+    const foamGeo = new THREE.PlaneGeometry(2.3, 0.35);
+    foamGeo.rotateX(-Math.PI / 2);
+    const frontFoam = new THREE.Mesh(foamGeo, this.waterFoamMat);
+    frontFoam.position.set(0, 0.04, 0.48);
+    const backFoam = new THREE.Mesh(foamGeo, this.waterFoamMat);
+    backFoam.position.set(0, 0.04, -0.48);
+    group.add(frontFoam, backFoam);
+
+    // Front-mounted warm warning lantern
+    const lantern = this.createFrontObstacleLantern(0.85);
+    lantern.position.set(0, logRadius + 0.2, 0.55);
+    const pool = lantern.getObjectByName('OBSTACLE_LIGHT_POOL');
+    if (pool) pool.position.set(0, -0.55, 0.75);
+    group.add(lantern);
+
+    group.userData.flames = [lantern.userData.flame];
+    return group;
+  }
+
+  // Level 3 Obstacle: Tangled Driftwood Branches & River Debris
+  public createRiverBranches(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'RIVER_BRANCHES';
+
+    // Main twisted trunk branch
+    const branch1Geo = new THREE.CylinderGeometry(0.16, 0.22, 1.8, 8);
+    const branch1 = new THREE.Mesh(branch1Geo, this.driftwoodMat);
+    branch1.position.set(0, 0.6, 0);
+    branch1.rotation.set(0.3, 0.4, 0.65);
+    branch1.castShadow = true;
+
+    // Cross branch
+    const branch2Geo = new THREE.CylinderGeometry(0.12, 0.16, 1.5, 8);
+    const branch2 = new THREE.Mesh(branch2Geo, this.driftwoodMat);
+    branch2.position.set(0.1, 0.55, 0);
+    branch2.rotation.set(-0.4, -0.5, -0.5);
+    branch2.castShadow = true;
+
+    // Upright root stub
+    const branch3Geo = new THREE.CylinderGeometry(0.1, 0.14, 1.2, 7);
+    const branch3 = new THREE.Mesh(branch3Geo, this.driftwoodMat);
+    branch3.position.set(-0.25, 0.65, 0.15);
+    branch3.rotation.set(0.15, 0.2, -0.15);
+    branch3.castShadow = true;
+
+    group.add(branch1, branch2, branch3);
+
+    // Caught river reeds in the tangle
+    for (let r = 0; r < 4; r++) {
+      const reedGeo = new THREE.CylinderGeometry(0.02, 0.03, 0.9, 5);
+      const reed = new THREE.Mesh(reedGeo, this.riverReedMat);
+      reed.position.set(-0.4 + r * 0.25, 0.45, 0.1 * (r % 2));
+      reed.rotation.set(0.2, 0, (Math.random() - 0.5) * 0.4);
+      group.add(reed);
+    }
+
+    // Water ripple ring around base
+    const rippleGeo = new THREE.RingGeometry(0.65, 1.2, 14);
+    rippleGeo.rotateX(-Math.PI / 2);
+    const ripple = new THREE.Mesh(rippleGeo, this.waterRippleMat);
+    ripple.position.set(0, 0.04, 0);
+    group.add(ripple);
+
+    // Front-mounted lantern
+    const lantern = this.createFrontObstacleLantern(0.85);
+    lantern.position.set(0, 0.55, 0.6);
+    const pool = lantern.getObjectByName('OBSTACLE_LIGHT_POOL');
+    if (pool) pool.position.set(0, -0.5, 0.8);
+    group.add(lantern);
+
+    group.userData.flames = [lantern.userData.flame];
+    return group;
+  }
+
+  // =========================================================================
   // 5. MOUNTAIN TRAIL WITH DENSE FOREST ON LEFT & RIGHT SIDES (TASK 1)
   // =========================================================================
   public createRoadSegment(length: number): THREE.Group {
@@ -2481,8 +2915,19 @@ export class ThreeModelBuilder {
     this.populateRailwayMineSegment(level2Group, length, roadWidth);
     segment.add(level2Group);
 
+    // -----------------------------------------------------------------------
+    // LEVEL 3: SACRED RIVER STREAM (FLOWING WATER, RIVERBED, REEDS, BOULDERS & CANYON)
+    // -----------------------------------------------------------------------
+    const level3Group = new THREE.Group();
+    level3Group.name = 'LEVEL_3_GROUP';
+    level3Group.visible = false; // Initially hidden, enabled when level >= 3
+
+    this.populateRiverStreamSegment(level3Group, length, roadWidth);
+    segment.add(level3Group);
+
     segment.userData.level1Group = level1Group;
     segment.userData.level2Group = level2Group;
+    segment.userData.level3Group = level3Group;
 
     return segment;
   }
@@ -2582,6 +3027,155 @@ export class ThreeModelBuilder {
         torch.position.set(baseOffset + 0.4 * sideSign, 1.6, tz);
         level2Group.add(torch);
       });
+    });
+  }
+
+  // Helper to populate Sacred River Stream (Level 3)
+  private populateRiverStreamSegment(level3Group: THREE.Group, length: number, roadWidth: number) {
+    // 1. Riverbed Ground (Lowered beneath water)
+    const riverbedGeo = new THREE.PlaneGeometry(roadWidth + 4, length);
+    riverbedGeo.rotateX(-Math.PI / 2);
+    const riverbedMesh = new THREE.Mesh(riverbedGeo, this.riverbedMaterial);
+    riverbedMesh.position.y = -0.22;
+    level3Group.add(riverbedMesh);
+
+    // 2. Crystal Flowing River Water Surface (Transparent, shimmering, animated UVs)
+    const waterGeo = new THREE.PlaneGeometry(roadWidth + 0.4, length);
+    waterGeo.rotateX(-Math.PI / 2);
+    const waterMesh = new THREE.Mesh(waterGeo, this.waterMaterial);
+    waterMesh.position.y = 0.03;
+    waterMesh.name = 'RIVER_WATER_MESH';
+    level3Group.add(waterMesh);
+
+    // 3. White Foam Edges along Left & Right River Borders
+    const foamGeo = new THREE.PlaneGeometry(0.75, length);
+    foamGeo.rotateX(-Math.PI / 2);
+    const leftFoam = new THREE.Mesh(foamGeo, this.waterFoamMat);
+    leftFoam.position.set(-roadWidth / 2 - 0.05, 0.035, 0);
+    const rightFoam = new THREE.Mesh(foamGeo, this.waterFoamMat);
+    rightFoam.position.set(roadWidth / 2 + 0.05, 0.035, 0);
+    level3Group.add(leftFoam, rightFoam);
+
+    // 4. Sloping Grassy Riverbanks on Both Sides
+    const bankWidth = 5.0;
+    const bankGeo = new THREE.BoxGeometry(bankWidth, 0.42, length);
+    const leftBank = new THREE.Mesh(bankGeo, this.riverbankGrassMat);
+    leftBank.position.set(-roadWidth / 2 - bankWidth / 2 + 0.2, 0.16, 0);
+    const rightBank = new THREE.Mesh(bankGeo, this.riverbankGrassMat);
+    rightBank.position.set(roadWidth / 2 + bankWidth / 2 - 0.2, 0.16, 0);
+    level3Group.add(leftBank, rightBank);
+
+    // 5. River Reeds / Cattails clustered along the water edges
+    const reedPositionsZ = [-20, -12, -4, 4, 12, 20];
+    reedPositionsZ.forEach((rz) => {
+      [-roadWidth / 2 + 0.3, roadWidth / 2 - 0.3].forEach((rx) => {
+        const cluster = new THREE.Group();
+        for (let i = 0; i < 5; i++) {
+          const rH = 1.1 + Math.random() * 0.6;
+          const stalkGeo = new THREE.CylinderGeometry(0.02, 0.03, rH, 5);
+          const stalk = new THREE.Mesh(stalkGeo, this.riverReedMat);
+          stalk.position.set((Math.random() - 0.5) * 0.4, rH / 2, (Math.random() - 0.5) * 0.4);
+          stalk.rotation.set((Math.random() - 0.5) * 0.2, 0, (Math.random() - 0.5) * 0.2);
+          cluster.add(stalk);
+
+          // Brown cattail top
+          const catGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.22, 6);
+          const cat = new THREE.Mesh(catGeo, this.driftwoodMat);
+          cat.position.set(stalk.position.x, rH - 0.1, stalk.position.z);
+          cluster.add(cat);
+        }
+        cluster.position.set(rx, 0.04, rz);
+        level3Group.add(cluster);
+      });
+    });
+
+    // 6. Floating Lily Pads with Pink Lotus Flowers bobbing near riverbanks
+    const lotusZ = [-18, -6, 8, 18];
+    lotusZ.forEach((lz, idx) => {
+      const lx = idx % 2 === 0 ? -roadWidth / 2 + 0.65 : roadWidth / 2 - 0.65;
+      const lotusGroup = new THREE.Group();
+
+      // Lily Pad
+      const padGeo = new THREE.CircleGeometry(0.42, 12);
+      padGeo.rotateX(-Math.PI / 2);
+      const pad = new THREE.Mesh(padGeo, this.riverLilyPadMat);
+      pad.position.y = 0.035;
+      lotusGroup.add(pad);
+
+      // Lotus Flower
+      const flower = new THREE.Group();
+      for (let p = 0; p < 8; p++) {
+        const petalGeo = new THREE.ConeGeometry(0.08, 0.24, 5);
+        petalGeo.rotateX(Math.PI / 3);
+        const petal = new THREE.Mesh(petalGeo, this.riverLotusMat);
+        petal.rotation.y = (p / 8) * Math.PI * 2;
+        petal.position.y = 0.04;
+        flower.add(petal);
+      }
+      flower.position.set(0, 0.04, 0);
+      lotusGroup.add(flower);
+
+      lotusGroup.position.set(lx, 0, lz);
+      level3Group.add(lotusGroup);
+    });
+
+    // 7. Riverside Weeping Willows / Jungle Trees & Mossy Boulders
+    const sides = [-1, 1];
+    sides.forEach((sideSign) => {
+      const treeX = (roadWidth / 2 + 3.2) * sideSign;
+
+      // Weeping Willows
+      [-15, 15].forEach((tz) => {
+        const treeGroup = new THREE.Group();
+        // Slender curved trunk
+        const trunkGeo = new THREE.CylinderGeometry(0.24, 0.38, 4.2, 7);
+        const trunk = new THREE.Mesh(trunkGeo, this.pineBarkMaterial);
+        trunk.position.set(0, 2.1, 0);
+        trunk.rotation.z = -0.15 * sideSign;
+        treeGroup.add(trunk);
+
+        // Drooping foliage tiers
+        const canopy1Geo = new THREE.ConeGeometry(2.4, 2.0, 8);
+        const canopy1 = new THREE.Mesh(canopy1Geo, this.mixedLeafMaterial);
+        canopy1.position.set(-0.3 * sideSign, 4.2, 0);
+        treeGroup.add(canopy1);
+
+        const canopy2Geo = new THREE.ConeGeometry(1.8, 1.8, 8);
+        const canopy2 = new THREE.Mesh(canopy2Geo, this.bushMaterial);
+        canopy2.position.set(-0.35 * sideSign, 5.2, 0);
+        treeGroup.add(canopy2);
+
+        treeGroup.position.set(treeX, 0.15, tz);
+        level3Group.add(treeGroup);
+      });
+
+      // Mossy River Boulders along river border
+      [-22, -8, 6, 22].forEach((bz) => {
+        const boulder = this.createCavernRock(1.2 + Math.random() * 0.6);
+        boulder.position.set((roadWidth / 2 + 1.2) * sideSign, 0, bz);
+        level3Group.add(boulder);
+      });
+
+      // Cascading Mini Waterfall from Canyon Cliff on the outer side
+      const waterfallX = (roadWidth / 2 + 5.5) * sideSign;
+      const cliffGeo = new THREE.BoxGeometry(2.8, 8.0, 12.0);
+      const cliff = new THREE.Mesh(cliffGeo, this.mossyBoulderMat);
+      cliff.position.set(waterfallX, 4.0, 0);
+      level3Group.add(cliff);
+
+      // Sheer vertical falling water sheet
+      const fallGeo = new THREE.PlaneGeometry(1.8, 7.5);
+      const fall = new THREE.Mesh(fallGeo, this.waterfallMat);
+      fall.position.set(waterfallX - 1.25 * sideSign, 3.8, 0);
+      fall.rotation.y = (Math.PI / 2) * sideSign;
+      level3Group.add(fall);
+
+      // Splash foam pool at bottom of waterfall
+      const splashPoolGeo = new THREE.CircleGeometry(1.4, 12);
+      splashPoolGeo.rotateX(-Math.PI / 2);
+      const splashPool = new THREE.Mesh(splashPoolGeo, this.waterFoamMat);
+      splashPool.position.set(waterfallX - 1.35 * sideSign, 0.05, 0);
+      level3Group.add(splashPool);
     });
   }
 
@@ -3402,5 +3996,69 @@ export class ThreeModelBuilder {
   // Alias for backward compatibility
   public createCelestialSky(): THREE.Group {
     return this.createMorningDawnSky();
+  }
+
+  // Level 3 Sky: Bright River Canyon Sky with Waterfall Silhouettes
+  public createRiverCanyonSky(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'RIVER_CANYON_SKY';
+
+    // 1. Sky Dome Background (Bright azure/cyan canyon sky)
+    const skyGeo = new THREE.SphereGeometry(260, 24, 16);
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const grad = ctx.createLinearGradient(0, 0, 0, 512);
+      grad.addColorStop(0, '#0284c7');    // Deep zenith sky
+      grad.addColorStop(0.35, '#38bdf8'); // Bright river azure
+      grad.addColorStop(0.7, '#bae6fd');  // Horizon mist
+      grad.addColorStop(1, '#e0f2fe');    // River canyon floor mist
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+    }
+    const skyTexture = new THREE.CanvasTexture(canvas);
+    const skyMat = new THREE.MeshBasicMaterial({
+      map: skyTexture,
+      side: THREE.BackSide,
+      depthWrite: false,
+    });
+    const skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    group.add(skyMesh);
+
+    // 2. Distant Forest Mountain Ridges
+    const ridgeCount = 18;
+    for (let r = 0; r < ridgeCount; r++) {
+      const rx = (r - ridgeCount / 2) * 28;
+      const rh = 40 + Math.sin(r * 1.2) * 22;
+      const rw = 24 + (r % 3) * 6;
+      const peakGeo = new THREE.ConeGeometry(rw, rh, 6);
+      const peakMat = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(r % 2 === 0 ? '#0f766e' : '#115e59'),
+        transparent: true,
+        opacity: 0.85,
+        depthWrite: false,
+      });
+      const peakMesh = new THREE.Mesh(peakGeo, peakMat);
+      peakMesh.position.set(rx, rh / 2, -180 + (r % 4) * 8);
+      group.add(peakMesh);
+    }
+
+    // 3. River Canyon Horizon Mist Band
+    const mistGeo = new THREE.PlaneGeometry(360, 42);
+    const mistMat = new THREE.MeshBasicMaterial({
+      color: 0xe0f2fe,
+      transparent: true,
+      opacity: 0.55,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const mistMesh = new THREE.Mesh(mistGeo, mistMat);
+    mistMesh.position.set(0, 16, -170);
+    group.add(mistMesh);
+
+    return group;
   }
 }

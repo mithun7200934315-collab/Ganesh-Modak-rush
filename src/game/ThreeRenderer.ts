@@ -28,6 +28,7 @@ export class ThreeRenderer {
   // Environment & Road
   private skyGroup: THREE.Group | null = null;
   private cavernSkyGroup: THREE.Group | null = null;
+  private riverSkyGroup: THREE.Group | null = null;
   private farMountainGroup: THREE.Group | null = null;
   private midTreeLineGroup: THREE.Group | null = null;
   private roadSegments: THREE.Group[] = [];
@@ -53,6 +54,21 @@ export class ThreeRenderer {
   private barricadePool: THREE.Group[] = [];
   private pillarPool: THREE.Group[] = [];
   private cartPool: THREE.Group[] = [];
+  private boulderPool: THREE.Group[] = [];
+  private fallenLogPool: THREE.Group[] = [];
+  private branchesPool: THREE.Group[] = [];
+
+  // Level 3 Water Splash Particles
+  private splashParticles: {
+    mesh: THREE.Mesh;
+    active: boolean;
+    life: number;
+    maxLife: number;
+    vx: number;
+    vy: number;
+    vz: number;
+  }[] = [];
+  private splashTimer: number = 0;
 
   private activeCollectibles: Map<string, { mesh: THREE.Group; type: CollectibleType }> = new Map();
   private activeObstacles: Map<string, { mesh: THREE.Group; type: ObstacleType }> = new Map();
@@ -172,20 +188,30 @@ export class ThreeRenderer {
     this.cavernSkyGroup = this.modelBuilder.createUndergroundCavernSky();
     this.cavernSkyGroup.visible = false;
     this.scene.add(this.cavernSkyGroup);
+
+    // Sacred River Canyon Sky (Level 3)
+    this.riverSkyGroup = this.modelBuilder.createRiverCanyonSky();
+    this.riverSkyGroup.visible = false;
+    this.scene.add(this.riverSkyGroup);
   }
 
   public resetRoad(playerZ: number = 0) {
-    const isLevel2 = this.currentLevel >= 2;
+    const isLevel1 = this.currentLevel === 1;
+    const isLevel2 = this.currentLevel === 2;
+    const isLevel3 = this.currentLevel >= 3;
     for (let i = 0; i < this.roadSegments.length; i++) {
       // Offset by 1 segment behind so road extends behind camera
       const z = playerZ + ROAD_SEGMENT_LENGTH - (i * ROAD_SEGMENT_LENGTH);
       this.roadSegments[i].position.set(0, 0, z);
 
       if (this.roadSegments[i].userData.level1Group) {
-        this.roadSegments[i].userData.level1Group.visible = !isLevel2;
+        this.roadSegments[i].userData.level1Group.visible = isLevel1;
       }
       if (this.roadSegments[i].userData.level2Group) {
         this.roadSegments[i].userData.level2Group.visible = isLevel2;
+      }
+      if (this.roadSegments[i].userData.level3Group) {
+        this.roadSegments[i].userData.level3Group.visible = isLevel3;
       }
     }
   }
@@ -395,6 +421,44 @@ export class ThreeRenderer {
       bar.visible = false;
       this.scene.add(bar);
       this.barricadePool.push(bar);
+
+      const boulder = this.modelBuilder.createRiverBoulder();
+      boulder.visible = false;
+      this.scene.add(boulder);
+      this.boulderPool.push(boulder);
+
+      const log = this.modelBuilder.createFallenLog();
+      log.visible = false;
+      this.scene.add(log);
+      this.fallenLogPool.push(log);
+
+      const branches = this.modelBuilder.createRiverBranches();
+      branches.visible = false;
+      this.scene.add(branches);
+      this.branchesPool.push(branches);
+    }
+
+    // 4. Level 3 Water Splash Particles
+    const splashGeo = new THREE.SphereGeometry(0.1, 6, 6);
+    const splashMat = new THREE.MeshBasicMaterial({
+      color: 0xe0f2fe,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    });
+    for (let i = 0; i < 35; i++) {
+      const mesh = new THREE.Mesh(splashGeo, splashMat.clone());
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.splashParticles.push({
+        mesh,
+        active: false,
+        life: 0,
+        maxLife: 0.4,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+      });
     }
   }
 
@@ -427,12 +491,18 @@ export class ThreeRenderer {
     let pool: THREE.Group[];
     if (type === 'STONE_PILLAR') pool = this.pillarPool;
     else if (type === 'WOODEN_CART') pool = this.cartPool;
+    else if (type === 'RIVER_BOULDER') pool = this.boulderPool;
+    else if (type === 'FALLEN_LOG') pool = this.fallenLogPool;
+    else if (type === 'RIVER_BRANCHES') pool = this.branchesPool;
     else pool = this.barricadePool;
 
     let mesh = pool.pop();
     if (!mesh) {
       if (type === 'STONE_PILLAR') mesh = this.modelBuilder.createStonePillar();
       else if (type === 'WOODEN_CART') mesh = this.modelBuilder.createWoodenCart();
+      else if (type === 'RIVER_BOULDER') mesh = this.modelBuilder.createRiverBoulder();
+      else if (type === 'FALLEN_LOG') mesh = this.modelBuilder.createFallenLog();
+      else if (type === 'RIVER_BRANCHES') mesh = this.modelBuilder.createRiverBranches();
       else mesh = this.modelBuilder.createFestiveBarricade();
       this.scene.add(mesh);
     }
@@ -444,7 +514,32 @@ export class ThreeRenderer {
     mesh.visible = false;
     if (type === 'STONE_PILLAR') this.pillarPool.push(mesh);
     else if (type === 'WOODEN_CART') this.cartPool.push(mesh);
+    else if (type === 'RIVER_BOULDER') this.boulderPool.push(mesh);
+    else if (type === 'FALLEN_LOG') this.fallenLogPool.push(mesh);
+    else if (type === 'RIVER_BRANCHES') this.branchesPool.push(mesh);
     else this.barricadePool.push(mesh);
+  }
+
+  public spawnWaterSplash(x: number, y: number, z: number, intensity: number = 1.0) {
+    let spawned = 0;
+    const targetCount = Math.floor(4 * intensity);
+    for (let i = 0; i < this.splashParticles.length && spawned < targetCount; i++) {
+      const p = this.splashParticles[i];
+      if (!p.active) {
+        p.active = true;
+        p.life = 0.28 + Math.random() * 0.15;
+        p.maxLife = p.life;
+        p.mesh.position.set(x + (Math.random() - 0.5) * 0.4, y, z + (Math.random() - 0.5) * 0.3);
+        p.mesh.visible = true;
+
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1.5 + Math.random() * 3.0;
+        p.vx = Math.cos(angle) * speed;
+        p.vy = 2.0 + Math.random() * 3.5 * intensity;
+        p.vz = 1.0 + Math.random() * 2.0;
+        spawned++;
+      }
+    }
   }
 
   public onWindowResize = () => {
@@ -531,30 +626,52 @@ export class ThreeRenderer {
     }
     this.lastPlayerZ = player.z;
 
-    // 0b. Level Transition Check (Level 1: Mountain Forest Trail, Level 2: Minecart Railway at 500+ pts)
-    const isLevel2 = _state.level >= 2;
+    // 0b. Level Transition Check (Level 1: Mountain Trail, Level 2: Minecart Railway, Level 3: River Stream)
+    const isLevel2 = _state.level === 2;
+    const isLevel3 = _state.level >= 3;
     if (this.currentLevel !== _state.level) {
       this.currentLevel = _state.level;
-      if (isLevel2) {
+      if (isLevel3) {
+        if (this.skyGroup) this.skyGroup.visible = false;
+        if (this.cavernSkyGroup) this.cavernSkyGroup.visible = false;
+        if (this.riverSkyGroup) this.riverSkyGroup.visible = true;
+        for (let i = 0; i < this.roadSegments.length; i++) {
+          const seg = this.roadSegments[i];
+          if (seg.userData.level1Group) seg.userData.level1Group.visible = false;
+          if (seg.userData.level2Group) seg.userData.level2Group.visible = false;
+          if (seg.userData.level3Group) seg.userData.level3Group.visible = true;
+        }
+        if (this.minecartGroup) this.minecartGroup.visible = false;
+        this.spawnTransformationBurst(player.x, player.y + 1.2, player.z - 2);
+      } else if (isLevel2) {
         if (this.skyGroup) this.skyGroup.visible = false;
         if (this.cavernSkyGroup) this.cavernSkyGroup.visible = true;
+        if (this.riverSkyGroup) this.riverSkyGroup.visible = false;
         for (let i = 0; i < this.roadSegments.length; i++) {
           const seg = this.roadSegments[i];
           if (seg.userData.level1Group) seg.userData.level1Group.visible = false;
           if (seg.userData.level2Group) seg.userData.level2Group.visible = true;
+          if (seg.userData.level3Group) seg.userData.level3Group.visible = false;
         }
         if (this.minecartGroup) this.minecartGroup.visible = true;
         this.spawnTransformationBurst(player.x, player.y + 1.2, player.z - 2);
       } else {
         if (this.skyGroup) this.skyGroup.visible = true;
         if (this.cavernSkyGroup) this.cavernSkyGroup.visible = false;
+        if (this.riverSkyGroup) this.riverSkyGroup.visible = false;
         for (let i = 0; i < this.roadSegments.length; i++) {
           const seg = this.roadSegments[i];
           if (seg.userData.level1Group) seg.userData.level1Group.visible = true;
           if (seg.userData.level2Group) seg.userData.level2Group.visible = false;
+          if (seg.userData.level3Group) seg.userData.level3Group.visible = false;
         }
         if (this.minecartGroup) this.minecartGroup.visible = false;
       }
+    }
+
+    // Scroll Level 3 Flowing Water UVs
+    if (isLevel3 && this.modelBuilder.waterTexture) {
+      this.modelBuilder.waterTexture.offset.y -= dt * (_state.speed * 0.05);
     }
 
     // 1. Update Player Position & 180° Character Rotator
@@ -737,13 +854,20 @@ export class ThreeRenderer {
         }
       }
 
-      // Running Dust Puffs Generation (only in Level 1 on dirt trail)
-      if (!isLevel2 && GAME_CONFIG.PLAYER_CONFIG.DUST_EFFECTS && player.isGrounded && _state.mode === 'PLAYING') {
+      // Running Dust Puffs (Level 1) vs Water Splash Droplets (Level 3)
+      if (!isLevel2 && !isLevel3 && GAME_CONFIG.PLAYER_CONFIG.DUST_EFFECTS && player.isGrounded && _state.mode === 'PLAYING') {
         this.dustTimer += dt;
         if (this.dustTimer >= 0.08) {
           this.dustTimer = 0;
           const pawSide = (Math.random() - 0.5) * 0.6;
           this.spawnDustPuff(player.x + pawSide, 0.05, player.z + 0.4);
+        }
+      } else if (isLevel3 && player.isGrounded && _state.mode === 'PLAYING') {
+        this.splashTimer += dt;
+        if (this.splashTimer >= 0.06) {
+          this.splashTimer = 0;
+          const pawSide = (Math.random() - 0.5) * 0.7;
+          this.spawnWaterSplash(player.x + pawSide, 0.06, player.z + 0.35);
         }
       }
 
@@ -767,8 +891,29 @@ export class ThreeRenderer {
         }
       }
 
+      // Update Active Water Splash Particles
+      for (let i = 0; i < this.splashParticles.length; i++) {
+        const s = this.splashParticles[i];
+        if (s.active) {
+          s.life -= dt;
+          if (s.life <= 0) {
+            s.active = false;
+            s.mesh.visible = false;
+          } else {
+            s.mesh.position.x += s.vx * dt;
+            s.mesh.position.y += s.vy * dt;
+            s.mesh.position.z += s.vz * dt;
+            s.vy -= 12.0 * dt; // Gravity pulls splash droplets down
+            const progress = 1 - (s.life / s.maxLife);
+            const scale = 0.8 + progress * 0.8;
+            s.mesh.scale.set(scale, scale, scale);
+            (s.mesh.material as THREE.MeshBasicMaterial).opacity = (s.life / s.maxLife) * 0.8;
+          }
+        }
+      }
+
       // Warm divine player light follows character
-      this.playerPointLight.color.setHex(0xfbbf24);
+      this.playerPointLight.color.setHex(isLevel3 ? 0x38bdf8 : 0xfbbf24);
       this.playerPointLight.intensity = isLevel2 ? 2.5 : 2.2;
       this.playerPointLight.distance = 16;
       this.playerPointLight.position.set(player.x, player.y + 2.2, player.z - 0.5);
@@ -792,7 +937,11 @@ export class ThreeRenderer {
     this.dirLight.target.updateMatrixWorld();
 
     // Sky follows forward progress with Parallax
-    if (isLevel2) {
+    if (isLevel3) {
+      if (this.riverSkyGroup) {
+        this.riverSkyGroup.position.set(0, 0, player.z);
+      }
+    } else if (isLevel2) {
       if (this.cavernSkyGroup) {
         this.cavernSkyGroup.position.set(0, 0, player.z);
       }
@@ -823,9 +972,30 @@ export class ThreeRenderer {
       }
     }
 
-    // Dynamic Fog & Lighting Smooth Interpolation for Level 1 vs Level 2
-    const targetFogHex = isLevel2 ? 0x0b0f19 : 0xc7d2fe;
-    const targetFogDensity = isLevel2 ? 0.0055 : GAME_CONFIG.FOREST_DENSITY.FOG_DENSITY;
+    // Dynamic Fog & Lighting Smooth Interpolation for Level 1 vs Level 2 vs Level 3
+    let targetFogHex = 0xc7d2fe;
+    let targetFogDensity = GAME_CONFIG.FOREST_DENSITY.FOG_DENSITY;
+    let targetAmbientHex = 0xffedd5;
+    let targetAmbientInt = 1.15;
+    let targetDirHex = 0xfef08a;
+    let targetDirInt = 1.65;
+
+    if (isLevel3) {
+      targetFogHex = 0xe0f2fe;
+      targetFogDensity = 0.0035;
+      targetAmbientHex = 0xbae6fd;
+      targetAmbientInt = 1.35;
+      targetDirHex = 0xfef08a;
+      targetDirInt = 1.75;
+    } else if (isLevel2) {
+      targetFogHex = 0x0b0f19;
+      targetFogDensity = 0.0055;
+      targetAmbientHex = 0x1e293b;
+      targetAmbientInt = 1.25;
+      targetDirHex = 0xfacc15;
+      targetDirInt = 1.15;
+    }
+
     this.targetFogColor.setHex(targetFogHex);
     this.currentFogColor.lerp(this.targetFogColor, Math.min(1, dt * 3.5));
     if (this.scene.fog instanceof THREE.FogExp2) {
@@ -833,13 +1003,9 @@ export class ThreeRenderer {
       this.scene.fog.density += (targetFogDensity - this.scene.fog.density) * Math.min(1, dt * 3.5);
     }
 
-    const targetAmbientHex = isLevel2 ? 0x1e293b : 0xffedd5;
-    const targetAmbientInt = isLevel2 ? 1.25 : 1.15;
     this.ambientLight.color.lerp(new THREE.Color(targetAmbientHex), Math.min(1, dt * 3.5));
     this.ambientLight.intensity += (targetAmbientInt - this.ambientLight.intensity) * Math.min(1, dt * 3.5);
 
-    const targetDirHex = isLevel2 ? 0xfacc15 : 0xfef08a;
-    const targetDirInt = isLevel2 ? 1.15 : 1.65;
     this.dirLight.color.lerp(new THREE.Color(targetDirHex), Math.min(1, dt * 3.5));
     this.dirLight.intensity += (targetDirInt - this.dirLight.intensity) * Math.min(1, dt * 3.5);
 

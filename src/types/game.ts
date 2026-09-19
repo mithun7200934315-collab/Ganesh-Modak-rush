@@ -52,7 +52,10 @@ export interface Collectible3D {
 export type ObstacleType =
   | 'FESTIVE_BARRICADE'
   | 'STONE_PILLAR'
-  | 'WOODEN_CART';
+  | 'WOODEN_CART'
+  | 'RIVER_BOULDER'
+  | 'FALLEN_LOG'
+  | 'RIVER_BRANCHES';
 
 export interface Obstacle3D {
   id: string;

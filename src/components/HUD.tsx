@@ -150,7 +150,29 @@ export const HUD = React.memo<HUDProps>(({
         </div>
 
         {/* Level Indicator Badge */}
-        {state.level >= 2 ? (
+        {state.level >= 3 ? (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.9) 0%, rgba(12, 74, 110, 0.9) 100%)',
+              border: '1.5px solid rgba(56, 189, 248, 0.85)',
+              borderRadius: '20px',
+              padding: '4px 14px',
+              backdropFilter: 'blur(8px)',
+              fontSize: '12px',
+              fontWeight: 900,
+              color: '#e0f2fe',
+              letterSpacing: '0.8px',
+              boxShadow: '0 0 16px rgba(56, 189, 248, 0.65)',
+              animation: 'pulse 1.5s infinite alternate',
+            }}
+          >
+            <span>🌊 LEVEL 3</span>
+            <span style={{ color: '#bae6fd', fontWeight: 600, fontSize: '11px' }}>• River Stream</span>
+          </div>
+        ) : state.level === 2 ? (
           <div
             style={{
               display: 'flex',
@@ -253,11 +275,17 @@ export const HUD = React.memo<HUDProps>(({
             flexDirection: 'column',
             alignItems: 'center',
             gap: '8px',
-            background: 'linear-gradient(135deg, rgba(120, 53, 15, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
-            border: '2.5px solid #fbbf24',
+            background:
+              state.levelTransitionBanner.level >= 3
+                ? 'linear-gradient(135deg, rgba(2, 132, 199, 0.95) 0%, rgba(12, 74, 110, 0.95) 100%)'
+                : 'linear-gradient(135deg, rgba(120, 53, 15, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)',
+            border: state.levelTransitionBanner.level >= 3 ? '2.5px solid #38bdf8' : '2.5px solid #fbbf24',
             borderRadius: '24px',
             padding: '16px 36px',
-            boxShadow: '0 12px 48px rgba(245, 158, 11, 0.75), 0 0 40px rgba(251, 191, 36, 0.8)',
+            boxShadow:
+              state.levelTransitionBanner.level >= 3
+                ? '0 12px 48px rgba(2, 132, 199, 0.75), 0 0 40px rgba(56, 189, 248, 0.85)'
+                : '0 12px 48px rgba(245, 158, 11, 0.75), 0 0 40px rgba(251, 191, 36, 0.8)',
             backdropFilter: 'blur(16px)',
             animation: 'bounce 0.6s ease',
             pointerEvents: 'none',

@@ -201,6 +201,13 @@ export const LEVEL_THRESHOLDS: LevelThreshold[] = [
     subtitle: 'Subterranean Crystal Cavern',
     badge: '🚂 LEVEL 2',
   },
+  {
+    level: 3,
+    minScore: 1000,
+    name: 'River Stream',
+    subtitle: 'Sacred Crystal River & Forest Shallows',
+    badge: '🌊 LEVEL 3',
+  },
 ];
 
 export const LEVEL_CONFIGS: LevelConfig[] = [
@@ -233,6 +240,21 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     pandalTheme: 'Subterranean Crystal Mine',
     blessingName: 'Patalavasi Vigneshwara Protection',
     blessingDesc: 'Lord Ganesha guides your minecart through subterranean depths with blazing divine light!',
+  },
+  {
+    id: 3,
+    name: 'Sacred River Stream of Lord Ganesha',
+    subtitle: 'Crystal-clear rushing river flanked by lush mossy riverbanks, waterfalls, and ancient broken timber',
+    skyColor: '#38bdf8',
+    groundColor: '#0c4a6e',
+    roadColor: '#0284c7',
+    decorColor: '#15803d',
+    speed: 22,
+    targetDistance: 15000,
+    obstacleTypes: ['RIVER_BOULDER', 'FALLEN_LOG', 'RIVER_BRANCHES'],
+    pandalTheme: 'Sacred Forest River',
+    blessingName: 'Jalavasi Vigneshwara River Blessing',
+    blessingDesc: 'Lord Ganesha clears all river currents and grants smooth passage across sacred waters!',
   },
 ];
 
