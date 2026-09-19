@@ -83,20 +83,93 @@ export const PALETTE = {
   auraPurple: '#a855f7',
 };
 
+// =========================================================================
+// CENTRAL GAME CONFIGURATION SECTION
+// Tweak player settings, environment, parallax speeds, and tree density here
+// =========================================================================
+export const GAME_CONFIG = {
+  // TASK 1: Permanent Lord Ganesha on Mushika Configuration
+  PLAYER_CONFIG: {
+    SHOW_AURA: true,            // Soft golden aura toggle around Lord Ganesha
+    DUST_EFFECTS: true,         // Running dust puffs from Mushika's paws
+    BOUNCE_INTENSITY: 1.0,      // Body bounce intensity
+    SWAY_INTENSITY: 1.0,        // Tassels, hair, and garland sway intensity
+  },
+
+  // TASK 2: Parallax Scrolling Speeds (relative to player forward movement)
+  PARALLAX: {
+    FAR_MOUNTAINS: 0.05,       // Layer 1: Snowy mountain peaks & sky dome
+    MID_TREES: 0.20,           // Layer 2: Distant tree lines & atmospheric haze
+    NEAR_FOREST: 1.0,          // Layer 3: Dense 3D pine and mixed forest along trail
+    FOREGROUND_FOLIAGE: 1.35,  // Layer 4: Passing foreground leaves and ferns
+  },
+
+  // TASK 2: Tree & Forest Density per Road Segment (50m length)
+  FOREST_DENSITY: {
+    PINES_PER_SEGMENT: 14,     // Dense layered pine & conifer trees on sides
+    MIXED_TREES_PER_SEGMENT: 8, // Broadleaf / leafy mixed trees
+    BUSHES_PER_SEGMENT: 12,    // Undergrowth bushes & ferns
+    ROCKS_PER_SEGMENT: 8,      // Mossy mountain trail rocks & boulders
+    FALLING_LEAVES_COUNT: 45,  // Drifting ambient leaves
+    FOG_DENSITY: 0.0032,       // Mountain valley atmospheric fog density
+  },
+
+  // TASK 3: Cohesive Palette (Warm Gold & Saffron against Snowy Peaks & Deep Forest Greens)
+  PALETTE: {
+    trailDirt: '#5c4838',      // Mountain dirt trail base
+    trailDirtLight: '#78614c', // Sunlit trail patch
+    trailRock: '#4a3d34',      // Rocky trail borders and stones
+    pineNeedleGreen: '#14532d',// Deep evergreen pine needles
+    pineNeedleLight: '#166534',// Highlighted pine foliage
+    pineBark: '#382516',       // Conifer trunk wood
+    mixedLeafGreen: '#15803d', // Vibrant deciduous leaves
+    mixedLeafAmber: '#ca8a04', // Autumn tint deciduous leaves
+    bushGreen: '#1e3a24',      // Deep undergrowth bush green
+    mossGreen: '#4d7c0f',      // Mossy rock accents
+    mountainFar: '#312e81',    // Distant mountain base silhouette
+    mountainMid: '#4338ca',    // Mid-range mountain base
+    mountainHaze: '#c7d2fe',   // Atmospheric blue-white mountain valley haze
+    sunlightGold: '#fef08a',   // Warm morning sunlight
+    sunlightAmber: '#f59e0b',  // Sun corona & god rays
+    divineAuraGold: '#fbbf24', // Lord Ganesha divine golden aura
+    divineAuraCore: '#fffbeb', // Lord Ganesha core aura glow
+    // Snowy Mountain Peaks
+    snowPeakWhite: '#ffffff',  // Bright snowy Himalayan peak caps
+    snowPeakShadow: '#cbd5e1', // Cool slate-blue snow shadow
+    mountainRockSlate: '#334155', // Rocky mountain face slate
+    mountainRockDark: '#1e293b',  // Deep mountain rock fissure
+    // Mushika Dark Grey Fur & Red/Gold Saddle
+    mushikaDarkFur: '#262b34', // Realistic dark charcoal-grey fur
+    mushikaDeepFur: '#181d24', // Deep fur shadow
+    mushikaUnderbelly: '#3f4756', // Slightly lighter chest/belly fur
+    saddleRed: '#991b1b',      // Rich royal crimson saddle blanket
+    saddleRedDark: '#7f1d1d',  // Deep crimson saddle shadow
+    saddleGoldTrim: '#f59e0b', // Ornate gold brocade trim
+    saddleTassel: '#d97706',   // Hanging gold tassels
+    // Lord Ganesha Saffron Dhoti & Accents
+    saffronDhoti: '#ea580c',   // Warm saffron silk dhoti
+    saffronDhotiLight: '#f97316', // Shimmering saffron highlight
+    lotusPink: '#f472b6',      // Sacred pink lotus petals
+    lotusPinkDeep: '#db2777',  // Deep lotus petal base
+    modakSweetGold: '#fde047', // Delicious golden modak sweets
+  },
+};
+
 export const LEVEL_CONFIGS: LevelConfig[] = [
   {
     id: 1,
-    name: 'Golden Dawn Swarna Mandir Highway',
-    subtitle: 'Sacred grey stone highway under crepuscular sun rays leading towards the massive golden-orange morning sun',
+    name: 'Mountain Forest Trail of Lord Ganesha',
+    subtitle: 'Winding mountain dirt trail flanked by dense pine forests under morning mist and golden sun rays',
     skyColor: '#fed7aa',
-    groundColor: '#7b828d',
-    roadColor: '#7b828d',
-    decorColor: '#f59e0b',
+    groundColor: '#5c4838',
+    roadColor: '#5c4838',
+    decorColor: '#166534',
     speed: 18,
     targetDistance: 5000,
     obstacleTypes: ['STONE_PILLAR', 'WOODEN_CART'],
-    pandalTheme: 'Golden Dawn Temple Path',
-    blessingName: 'Vakratunda Mahakaya Blessing',
-    blessingDesc: 'Lord Ganesha showers divine wisdom, obstacle removal, and radiant morning prosperity upon you!',
+    pandalTheme: 'Sacred Mountain Forest Trail',
+    blessingName: 'Vakratunda Mahakaya Mountain Blessing',
+    blessingDesc: 'Lord Ganesha showers divine wisdom, obstacle removal, and radiant prosperity upon your journey!',
   },
 ];
+

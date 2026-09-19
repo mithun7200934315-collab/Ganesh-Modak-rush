@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { LANE_WIDTH, PALETTE, ROAD_SEGMENT_LENGTH } from './constants';
+import { LANE_WIDTH, PALETTE, ROAD_SEGMENT_LENGTH, GAME_CONFIG } from './constants';
 
 export interface PlayerCharacterMeshes {
   root: THREE.Group;
@@ -9,27 +9,51 @@ export interface PlayerCharacterMeshes {
   auraInner: THREE.Mesh;
   auraOuter: THREE.Mesh;
   ears: THREE.Group[];
+  mooshikaGroup: THREE.Group;
+  ganeshaGroup: THREE.Group;
+  tassels: THREE.Group[];
+  hairGroup: THREE.Group;
 }
 
 export class ThreeModelBuilder {
   // Shared materials for top performance and visual consistency
   private goldMaterial: THREE.MeshStandardMaterial;
   private shinyGoldMaterial: THREE.MeshStandardMaterial;
-  private royalSilkMaterial: THREE.MeshStandardMaterial;
   private ganeshaSkinMaterial: THREE.MeshStandardMaterial;
 
-  // Mooshika Grey Rat Materials
-  private mooshikaGreyMaterial: THREE.MeshStandardMaterial;
-  private mooshikaLightGreyMaterial: THREE.MeshStandardMaterial;
-  private pinkSkinMaterial: THREE.MeshStandardMaterial;
+  // Lord Ganesha Saffron Dhoti, Lotus & Flowing Hair Materials
+  private saffronDhotiMaterial: THREE.MeshStandardMaterial;
+  private lotusPetalMaterial: THREE.MeshStandardMaterial;
+  private lotusCenterMaterial: THREE.MeshStandardMaterial;
+  private hairMaterial: THREE.MeshStandardMaterial;
 
-  // Grey Stone Road & Carved Mandala Materials
-  private greyStoneRoadMaterial: THREE.MeshStandardMaterial;
-  private carvedMandalaMaterial: THREE.MeshStandardMaterial;
+  // Mooshika Dark Grey Rat Materials & Red/Gold Saddle
+  private pinkSkinMaterial: THREE.MeshStandardMaterial;
+  private mushikaDarkFurMaterial: THREE.MeshStandardMaterial;
+  private mushikaUnderbellyMaterial: THREE.MeshStandardMaterial;
+  private mushikaGoldenArmorMaterial: THREE.MeshStandardMaterial;
+  private saddleCrimsonMaterial: THREE.MeshStandardMaterial;
+
+  // Snowy Mountain Materials
+  private snowMaterial: THREE.MeshStandardMaterial;
+  private mountainSlateMaterial: THREE.MeshStandardMaterial;
+
   private carvedPillarMaterial: THREE.MeshStandardMaterial;
   private cartWoodMaterial: THREE.MeshStandardMaterial;
   private marigoldOrangeMaterial: THREE.MeshStandardMaterial;
   private marigoldYellowMaterial: THREE.MeshStandardMaterial;
+
+  // Mountain Trail & Dense Forest Materials (Task 1 & Task 3)
+  private mountainTrailMaterial: THREE.MeshStandardMaterial;
+  private mountainRockMaterial: THREE.MeshStandardMaterial;
+  private pineNeedleMaterial: THREE.MeshStandardMaterial;
+  private pineNeedleLightMaterial: THREE.MeshStandardMaterial;
+  private pineBarkMaterial: THREE.MeshStandardMaterial;
+  private mixedLeafMaterial: THREE.MeshStandardMaterial;
+  private mixedLeafAmberMaterial: THREE.MeshStandardMaterial;
+  private bushMaterial: THREE.MeshStandardMaterial;
+  private fernMaterial: THREE.MeshStandardMaterial;
+  private mountainHazeMat: THREE.MeshBasicMaterial;
 
   // Diya & Lighting Materials
   private diyaBrassMaterial: THREE.MeshStandardMaterial;
@@ -48,7 +72,7 @@ export class ThreeModelBuilder {
   private sunCoreMat: THREE.MeshBasicMaterial;
   private sunGlowMat: THREE.MeshBasicMaterial;
   private godRayMat: THREE.MeshBasicMaterial;
-  private templeSilhouetteMat: THREE.MeshBasicMaterial;
+  private mountainSilhouetteMatMid: THREE.MeshStandardMaterial;
 
   // Shared Geometries
   private modakBaseGeo: THREE.BufferGeometry;
@@ -87,21 +111,34 @@ export class ThreeModelBuilder {
   private barricadeBeamGeo: THREE.BufferGeometry;
   private barricadeFinialGeo: THREE.BufferGeometry;
 
-  // Road Geometries
+  // Road & Mountain Trail Geometries
   private roadPlaneGeo: THREE.BufferGeometry;
   private roadLineGeo: THREE.BufferGeometry;
   private roadCurbGeo: THREE.BufferGeometry;
   private mandalaDecalGeo: THREE.BufferGeometry;
   private roadGarlandFlowerGeo: THREE.BufferGeometry;
 
+  // Dense Forest Geometries (Task 1)
+  private pineTier1Geo: THREE.BufferGeometry;
+  private pineTier2Geo: THREE.BufferGeometry;
+  private pineTier3Geo: THREE.BufferGeometry;
+  private pineTrunkGeo: THREE.BufferGeometry;
+  private broadleafCanopyGeo: THREE.BufferGeometry;
+  private broadleafTrunkGeo: THREE.BufferGeometry;
+  private mountainRockGeo: THREE.BufferGeometry;
+  private bushGeo: THREE.BufferGeometry;
+  private fernGeo: THREE.BufferGeometry;
+
   // Static cached textures
   private static cachedDawnSkyTexture: THREE.CanvasTexture | null = null;
+  private static cachedMountainTrailTexture: THREE.CanvasTexture | null = null;
   private static cachedSilkTexture: THREE.CanvasTexture | null = null;
   private static cachedSaddleTexture: THREE.CanvasTexture | null = null;
   private static cachedStoneRoadTexture: THREE.CanvasTexture | null = null;
   private static cachedMandalaTexture: THREE.CanvasTexture | null = null;
   private static cachedDiyaGlowTexture: THREE.CanvasTexture | null = null;
   private static cachedGodRayTexture: THREE.CanvasTexture | null = null;
+  private static cachedAlpineMountainTexture: THREE.CanvasTexture | null = null;
 
   constructor() {
     this.initStaticTextures();
@@ -123,12 +160,38 @@ export class ThreeModelBuilder {
       emissiveIntensity: 0.58,
     });
 
-    // 2. Lord Ganesha's Royal Silk Cloth (Rich Royal Purple with Gold Brocade Texture)
-    this.royalSilkMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#581c87'),
+    // Warm Gold & Saffron Silk Dhoti (Matching Reference Image)
+    this.saffronDhotiMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.saffronDhoti),
       map: ThreeModelBuilder.cachedSilkTexture,
-      roughness: 0.32,
-      metalness: 0.22,
+      roughness: 0.35,
+      metalness: 0.2,
+      emissive: new THREE.Color('#9a3412'),
+      emissiveIntensity: 0.22,
+    });
+
+    // Sacred Pink Lotus Petals & Golden Center
+    this.lotusPetalMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.lotusPink),
+      roughness: 0.3,
+      metalness: 0.1,
+      emissive: new THREE.Color(GAME_CONFIG.PALETTE.lotusPinkDeep),
+      emissiveIntensity: 0.25,
+    });
+
+    this.lotusCenterMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#fde047'),
+      roughness: 0.2,
+      metalness: 0.8,
+      emissive: new THREE.Color('#d97706'),
+      emissiveIntensity: 0.35,
+    });
+
+    // Flowing Dark Hair Cascading behind Crown
+    this.hairMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#0a0d14'),
+      roughness: 0.65,
+      metalness: 0.15,
     });
 
     // 3. Divine Radiant Skin Tone (Lord Ganesha)
@@ -140,42 +203,61 @@ export class ThreeModelBuilder {
       emissiveIntensity: 0.22,
     });
 
-    // 4. Mooshika Fur (Grey Rat) & Pink Skin
-    this.mooshikaGreyMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(PALETTE.mooshikaGrey),
-      roughness: 0.52,
-      metalness: 0.08,
-    });
-
-    this.mooshikaLightGreyMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(PALETTE.mooshikaLightGrey),
-      roughness: 0.48,
-      metalness: 0.06,
-    });
-
+    // 4. Mooshika Fur & Pink Skin
     this.pinkSkinMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color(PALETTE.mooshikaPink),
       roughness: 0.55,
       metalness: 0.0,
     });
 
-    // 5. Early Morning Grey Stone Road & Carved Mandala Materials
-    this.greyStoneRoadMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(PALETTE.stoneRoad),
-      map: ThreeModelBuilder.cachedStoneRoadTexture,
-      roughness: 0.82,
-      metalness: 0.12,
+    // Realistic Dark Grey Fur for Mooshika (Task 1: Matching Reference Image)
+    this.mushikaDarkFurMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.mushikaDarkFur),
+      roughness: 0.85,
+      metalness: 0.08,
     });
 
-    this.carvedMandalaMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#ffffff'),
-      map: ThreeModelBuilder.cachedMandalaTexture,
-      transparent: true,
-      roughness: 0.75,
-      metalness: 0.15,
-      polygonOffset: true,
-      polygonOffsetFactor: -1,
-      polygonOffsetUnits: -1,
+    this.mushikaUnderbellyMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.mushikaUnderbelly),
+      roughness: 0.8,
+      metalness: 0.05,
+    });
+
+    // Ornate Golden Head Armor for Mooshika
+    this.mushikaGoldenArmorMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(PALETTE.divineGold),
+      metalness: 0.92,
+      roughness: 0.15,
+      emissive: new THREE.Color('#b45309'),
+      emissiveIntensity: 0.32,
+    });
+
+    // Rich Royal Crimson & Gold Saddle Blanket
+    this.saddleCrimsonMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.saddleRed),
+      map: ThreeModelBuilder.cachedSaddleTexture,
+      roughness: 0.38,
+      metalness: 0.25,
+      emissive: new THREE.Color(GAME_CONFIG.PALETTE.saddleRedDark),
+      emissiveIntensity: 0.2,
+    });
+
+    // High-Fidelity Snowy Mountain Materials (Matching Reference Image)
+    this.snowMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.snowPeakWhite),
+      roughness: 0.2,
+      metalness: 0.08,
+      emissive: new THREE.Color('#cbd5e1'),
+      emissiveIntensity: 0.16,
+      flatShading: true,
+    });
+
+    this.mountainSlateMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.mountainRockSlate),
+      map: ThreeModelBuilder.cachedAlpineMountainTexture,
+      roughness: 0.82,
+      metalness: 0.16,
+      flatShading: true,
     });
 
     this.carvedPillarMaterial = new THREE.MeshStandardMaterial({
@@ -298,11 +380,77 @@ export class ThreeModelBuilder {
       depthWrite: false,
     });
 
-    this.templeSilhouetteMat = new THREE.MeshBasicMaterial({
-      color: 0xb4533c,
+    // Mountain silhouettes and atmospheric haze
+    this.mountainSilhouetteMatMid = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#252f40'),
+      map: ThreeModelBuilder.cachedAlpineMountainTexture,
+      roughness: 0.85,
+      metalness: 0.12,
+      flatShading: true,
+    });
+
+    this.mountainHazeMat = new THREE.MeshBasicMaterial({
+      color: 0xc7d2fe,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.35,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
       depthWrite: false,
+    });
+
+    // Mountain Trail & Dense Forest Materials
+    this.mountainTrailMaterial = new THREE.MeshStandardMaterial({
+      map: ThreeModelBuilder.cachedMountainTrailTexture,
+      roughness: 0.88,
+      metalness: 0.06,
+    });
+
+    this.mountainRockMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.trailRock),
+      roughness: 0.9,
+      metalness: 0.08,
+    });
+
+    this.pineNeedleMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.pineNeedleGreen),
+      roughness: 0.72,
+      metalness: 0.05,
+    });
+
+    this.pineNeedleLightMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.pineNeedleLight),
+      roughness: 0.68,
+      metalness: 0.05,
+    });
+
+    this.pineBarkMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.pineBark),
+      roughness: 0.85,
+      metalness: 0.06,
+    });
+
+    this.mixedLeafMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.mixedLeafGreen),
+      roughness: 0.65,
+      metalness: 0.05,
+    });
+
+    this.mixedLeafAmberMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.mixedLeafAmber),
+      roughness: 0.65,
+      metalness: 0.05,
+    });
+
+    this.bushMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(GAME_CONFIG.PALETTE.bushGreen),
+      roughness: 0.75,
+      metalness: 0.05,
+    });
+
+    this.fernMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#22c55e'),
+      roughness: 0.6,
+      side: THREE.DoubleSide,
     });
 
     // --- Pre-build Shared Geometries ---
@@ -360,12 +508,91 @@ export class ThreeModelBuilder {
     this.mandalaDecalGeo = new THREE.PlaneGeometry(2.1, 2.1);
     this.mandalaDecalGeo.rotateX(-Math.PI / 2);
     this.roadGarlandFlowerGeo = new THREE.SphereGeometry(0.12, 6, 6);
+
+    // 6. Dense Forest & Mountain Assets (Task 1)
+    this.pineTier1Geo = new THREE.ConeGeometry(1.6, 2.8, 7);
+    this.pineTier2Geo = new THREE.ConeGeometry(1.3, 2.4, 7);
+    this.pineTier3Geo = new THREE.ConeGeometry(0.9, 2.0, 7);
+    this.pineTrunkGeo = new THREE.CylinderGeometry(0.22, 0.34, 3.5, 7);
+
+    this.broadleafCanopyGeo = new THREE.DodecahedronGeometry(1.5, 1);
+    this.broadleafTrunkGeo = new THREE.CylinderGeometry(0.2, 0.3, 2.8, 6);
+
+    this.mountainRockGeo = new THREE.DodecahedronGeometry(0.85, 0);
+    this.bushGeo = new THREE.SphereGeometry(0.7, 7, 6);
+    this.fernGeo = new THREE.PlaneGeometry(0.5, 0.85);
   }
 
   // =========================================================================
   // STATIC PROCEDURAL HIGH-RES TEXTURES
   // =========================================================================
   private initStaticTextures() {
+    // Mountain Dirt Trail Texture (Task 1: Dirt/Rock path with natural gravel & pine needles)
+    if (!ThreeModelBuilder.cachedMountainTrailTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Rich earthy brown mountain dirt base
+        ctx.fillStyle = '#5c4838';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Dirt path subtle layers & natural color variations
+        for (let i = 0; i < 60; i++) {
+          const gx = Math.random() * 1024;
+          const gy = Math.random() * 1024;
+          const gw = 120 + Math.random() * 200;
+          const gh = 60 + Math.random() * 120;
+          const shades = ['#6b5442', '#523f31', '#634d3b', '#735c49', '#4d392a'];
+          ctx.fillStyle = shades[Math.floor(Math.random() * shades.length)];
+          ctx.beginPath();
+          ctx.ellipse(gx, gy, gw / 2, gh / 2, Math.random() * Math.PI, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Central worn trail ruts (subtly compacted soil)
+        const rutGrad = ctx.createLinearGradient(0, 0, 1024, 0);
+        rutGrad.addColorStop(0, 'rgba(74, 61, 52, 0.4)');
+        rutGrad.addColorStop(0.2, 'rgba(115, 92, 73, 0.25)');
+        rutGrad.addColorStop(0.5, 'rgba(125, 105, 91, 0.35)');
+        rutGrad.addColorStop(0.8, 'rgba(115, 92, 73, 0.25)');
+        rutGrad.addColorStop(1, 'rgba(74, 61, 52, 0.4)');
+        ctx.fillStyle = rutGrad;
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Embedded pebbles and mountain gravel
+        for (let p = 0; p < 1200; p++) {
+          const px = Math.random() * 1024;
+          const py = Math.random() * 1024;
+          const size = 1.5 + Math.random() * 3.5;
+          const isLight = Math.random() > 0.4;
+          ctx.fillStyle = isLight ? 'rgba(195, 175, 155, 0.3)' : 'rgba(35, 25, 18, 0.35)';
+          ctx.beginPath();
+          ctx.arc(px, py, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Scattered fallen evergreen pine needles
+        for (let n = 0; n < 800; n++) {
+          const nx = Math.random() * 1024;
+          const ny = Math.random() * 1024;
+          const angle = Math.random() * Math.PI * 2;
+          const len = 8 + Math.random() * 12;
+          ctx.strokeStyle = Math.random() > 0.6 ? '#2d4a22' : '#854d0e';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(nx, ny);
+          ctx.lineTo(nx + Math.cos(angle) * len, ny + Math.sin(angle) * len);
+          ctx.stroke();
+        }
+      }
+      ThreeModelBuilder.cachedMountainTrailTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedMountainTrailTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedMountainTrailTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedMountainTrailTexture.repeat.set(2, 6);
+    }
+
     // 1. Early Morning Dawn Sky Texture (Smooth gradient of peach, pink, and gold)
     if (!ThreeModelBuilder.cachedDawnSkyTexture) {
       const canvas = document.createElement('canvas');
@@ -373,10 +600,10 @@ export class ThreeModelBuilder {
       canvas.height = 1024;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Vertical Dawn Sky Gradient: Golden Amber Zenith -> Rose Pink -> Peach Horizon
+        // Vertical Dawn Sky Gradient: Deep Blue-Purple Zenith -> Warm Amber -> Glowing Peach Horizon
         const bgGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-        bgGrad.addColorStop(0.0, '#ea580c'); // Golden-orange apex
-        bgGrad.addColorStop(0.25, '#fb923c'); // Morning warm amber
+        bgGrad.addColorStop(0.0, '#312e81'); // Deep mountain indigo
+        bgGrad.addColorStop(0.25, '#6366f1'); // Mountain atmospheric haze
         bgGrad.addColorStop(0.55, '#f472b6'); // Soft dawn pink
         bgGrad.addColorStop(0.8, '#fda4af');  // Warm rose peach
         bgGrad.addColorStop(1.0, '#fed7aa');  // Glowing peach horizon mist
@@ -746,10 +973,84 @@ export class ThreeModelBuilder {
       }
       ThreeModelBuilder.cachedDiyaGlowTexture = new THREE.CanvasTexture(canvas);
     }
+
+    // 8. Alpine Himalayan Mountain Texture (Slate Rock Strata, Snow Couloirs & Fissures)
+    if (!ThreeModelBuilder.cachedAlpineMountainTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Deep slate-grey and charcoal rock base
+        const rockGrad = ctx.createLinearGradient(0, 0, 0, 1024);
+        rockGrad.addColorStop(0.0, '#334155'); // Cool slate blue at crest
+        rockGrad.addColorStop(0.3, '#1e293b'); // Dark rock chasm
+        rockGrad.addColorStop(0.7, '#0f172a'); // Deep shadow rock
+        rockGrad.addColorStop(1.0, '#1e293b');
+        ctx.fillStyle = rockGrad;
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Vertical rock strata, striations, and craggy fissures
+        for (let i = 0; i < 220; i++) {
+          const rx = Math.random() * 1024;
+          const ry = Math.random() * 1024;
+          const rw = 2 + Math.random() * 6;
+          const rh = 60 + Math.random() * 240;
+          ctx.fillStyle = Math.random() > 0.5 ? 'rgba(15, 23, 42, 0.45)' : 'rgba(71, 85, 105, 0.35)';
+          ctx.fillRect(rx, ry, rw, rh);
+        }
+
+        // Snowfield accumulation in upper regions (pure white with soft slate shadows)
+        const snowGrad = ctx.createLinearGradient(0, 0, 0, 520);
+        snowGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.98)');
+        snowGrad.addColorStop(0.25, 'rgba(248, 250, 252, 0.92)');
+        snowGrad.addColorStop(0.55, 'rgba(226, 232, 240, 0.7)');
+        snowGrad.addColorStop(0.85, 'rgba(203, 213, 225, 0.3)');
+        snowGrad.addColorStop(1.0, 'rgba(203, 213, 225, 0.0)');
+        ctx.fillStyle = snowGrad;
+        ctx.fillRect(0, 0, 1024, 520);
+
+        // Snow couloirs & gullies running down the rock face
+        for (let c = 0; c < 38; c++) {
+          const cx = Math.random() * 1024;
+          const cy = Math.random() * 260;
+          const len = 180 + Math.random() * 380;
+          const wTop = 8 + Math.random() * 20;
+
+          ctx.beginPath();
+          ctx.moveTo(cx - wTop / 2, cy);
+          ctx.lineTo(cx + wTop / 2, cy);
+          ctx.lineTo(cx + (Math.random() - 0.5) * 45, cy + len);
+          ctx.closePath();
+
+          const couloirGrad = ctx.createLinearGradient(0, cy, 0, cy + len);
+          couloirGrad.addColorStop(0.0, 'rgba(255, 255, 255, 0.92)');
+          couloirGrad.addColorStop(0.7, 'rgba(241, 245, 249, 0.65)');
+          couloirGrad.addColorStop(1.0, 'rgba(203, 213, 225, 0.0)');
+          ctx.fillStyle = couloirGrad;
+          ctx.fill();
+        }
+
+        // Glacial ice & sunlit highlight flecks
+        for (let g = 0; g < 400; g++) {
+          const gx = Math.random() * 1024;
+          const gy = Math.random() * 600;
+          const size = 1 + Math.random() * 3;
+          ctx.fillStyle = Math.random() > 0.4 ? 'rgba(255, 255, 255, 0.85)' : 'rgba(199, 210, 254, 0.5)';
+          ctx.beginPath();
+          ctx.arc(gx, gy, size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ThreeModelBuilder.cachedAlpineMountainTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedAlpineMountainTexture.wrapS = THREE.ClampToEdgeWrapping;
+      ThreeModelBuilder.cachedAlpineMountainTexture.wrapT = THREE.ClampToEdgeWrapping;
+    }
   }
 
   // =========================================================================
-  // 1. PLAYER: LORD GANESHA RIDING MOOSHIKA THE GREY RAT (180° ROTATION)
+  // 1. PLAYER: PERMANENT LORD GANESHA RIDING MUSHIKA THE GIANT MOUSE
+  // Matching Reference Image (/assets/ganesh.jpg)
   // =========================================================================
   public createPlayerCharacter(): PlayerCharacterMeshes {
     const root = new THREE.Group();
@@ -758,194 +1059,299 @@ export class ThreeModelBuilder {
 
     const legs: THREE.Mesh[] = [];
     const ears: THREE.Group[] = [];
+    const tassels: THREE.Group[] = [];
 
-    // --- MOOSHIKA (VAHANA - GREY SACRED RAT) ---
+    // --- MUSHIKA (VAHANA - LARGE DARK GREY SACRED MOUSE) ---
     const mooshikaGroup = new THREE.Group();
     mooshikaGroup.position.set(0, 0.4, 0);
 
-    // Mooshika Sleek Grey Body
-    const bodyGeo = new THREE.SphereGeometry(0.55, 16, 16);
-    bodyGeo.scale(1.1, 0.75, 1.6);
-    const bodyMesh = new THREE.Mesh(bodyGeo, this.mooshikaGreyMaterial);
+    // 1. Large, Powerful Dark Grey Body (Matching Reference)
+    const bodyGeo = new THREE.SphereGeometry(0.56, 18, 18);
+    bodyGeo.scale(1.18, 0.78, 1.68);
+    const bodyMesh = new THREE.Mesh(bodyGeo, this.mushikaDarkFurMaterial);
     bodyMesh.castShadow = true;
     bodyMesh.receiveShadow = true;
     mooshikaGroup.add(bodyMesh);
 
-    // Lighter grey underbelly & chest
-    const chestGeo = new THREE.SphereGeometry(0.48, 14, 14);
-    chestGeo.scale(0.9, 0.6, 1.3);
-    const chestMesh = new THREE.Mesh(chestGeo, this.mooshikaLightGreyMaterial);
-    chestMesh.position.set(0, -0.08, -0.15);
+    // Underbelly & Chest (Slightly softer charcoal fur)
+    const chestGeo = new THREE.SphereGeometry(0.5, 16, 16);
+    chestGeo.scale(0.96, 0.64, 1.36);
+    const chestMesh = new THREE.Mesh(chestGeo, this.mushikaUnderbellyMaterial);
+    chestMesh.position.set(0, -0.07, -0.16);
     mooshikaGroup.add(chestMesh);
 
-    // Mooshika Grey Head
-    const headGeo = new THREE.ConeGeometry(0.35, 0.75, 16);
+    // 2. Mushika Dark Grey Head
+    const headGeo = new THREE.ConeGeometry(0.38, 0.82, 18);
     headGeo.rotateX(-Math.PI / 2);
-    const headMesh = new THREE.Mesh(headGeo, this.mooshikaGreyMaterial);
-    headMesh.position.set(0, 0.15, -0.9);
+    const headMesh = new THREE.Mesh(headGeo, this.mushikaDarkFurMaterial);
+    headMesh.position.set(0, 0.15, -0.92);
     headMesh.castShadow = true;
     mooshikaGroup.add(headMesh);
 
-    // Cute Pink Snout Tip
+    // Realistic Snout Tip
     const noseGeo = new THREE.SphereGeometry(0.08, 12, 12);
     const noseMesh = new THREE.Mesh(noseGeo, this.pinkSkinMaterial);
-    noseMesh.position.set(0, 0.12, -1.3);
+    noseMesh.position.set(0, 0.12, -1.34);
     mooshikaGroup.add(noseMesh);
 
-    // Cute Dark Eyes with Divine Sparkle
-    const eyeGeo = new THREE.SphereGeometry(0.06, 12, 12);
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+    // Realistic Whiskers (3 on left, 3 on right)
+    const whiskerMat = new THREE.LineBasicMaterial({ color: 0x334155 });
+    for (let w = 0; w < 3; w++) {
+      const leftWGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-0.06, 0.12, -1.3),
+        new THREE.Vector3(-0.35, 0.1 + w * 0.04, -1.2 + w * 0.08),
+      ]);
+      const leftW = new THREE.Line(leftWGeo, whiskerMat);
+
+      const rightWGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0.06, 0.12, -1.3),
+        new THREE.Vector3(0.35, 0.1 + w * 0.04, -1.2 + w * 0.08),
+      ]);
+      const rightW = new THREE.Line(rightWGeo, whiskerMat);
+      mooshikaGroup.add(leftW, rightW);
+    }
+
+    // Glistening Expressive Dark Eyes with Catchlight
+    const eyeGeo = new THREE.SphereGeometry(0.065, 14, 14);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x0a0f1d });
     const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-    leftEye.position.set(-0.2, 0.28, -0.95);
+    leftEye.position.set(-0.21, 0.3, -0.96);
     const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-    rightEye.position.set(0.2, 0.28, -0.95);
+    rightEye.position.set(0.21, 0.3, -0.96);
+
+    // White catchlight gleam in eyes
+    const gleamGeo = new THREE.SphereGeometry(0.018, 8, 8);
+    const gleamMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const leftGleam = new THREE.Mesh(gleamGeo, gleamMat);
+    leftGleam.position.set(-0.02, 0.02, -0.05);
+    leftEye.add(leftGleam);
+    const rightGleam = new THREE.Mesh(gleamGeo, gleamMat);
+    rightGleam.position.set(-0.02, 0.02, -0.05);
+    rightEye.add(rightGleam);
     mooshikaGroup.add(leftEye, rightEye);
 
-    // Cute Round Ears with Soft Pink Inner Ear & Grey Outer Shell
-    const ratEarGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 16);
+    // Rounded Mouse Ears with Soft Pink Inner & Dark Fur Shell
+    const ratEarGeo = new THREE.CylinderGeometry(0.19, 0.19, 0.04, 16);
     ratEarGeo.rotateX(Math.PI / 2);
 
     const leftRatEar = new THREE.Mesh(ratEarGeo, this.pinkSkinMaterial);
-    leftRatEar.position.set(-0.32, 0.42, -0.7);
-    leftRatEar.rotation.z = 0.3;
+    leftRatEar.position.set(-0.33, 0.44, -0.7);
+    leftRatEar.rotation.z = 0.28;
 
     const rightRatEar = new THREE.Mesh(ratEarGeo, this.pinkSkinMaterial);
-    rightRatEar.position.set(0.32, 0.42, -0.7);
-    rightRatEar.rotation.z = -0.3;
+    rightRatEar.position.set(0.33, 0.44, -0.7);
+    rightRatEar.rotation.z = -0.28;
     mooshikaGroup.add(leftRatEar, rightRatEar);
 
-    // 4 Animated Running Gallop Grey Legs with Pink Paws
-    const legGeo = new THREE.CapsuleGeometry(0.1, 0.35, 8, 8);
+    // 3. ORNATE GOLDEN HEAD ARMOR / FOREHEAD PLATE (Matching Reference Image)
+    const headArmorGroup = new THREE.Group();
+    headArmorGroup.position.set(0, 0.36, -0.85);
+
+    // Crown filigree plate between the ears
+    const plateGeo = new THREE.BoxGeometry(0.36, 0.04, 0.28);
+    const plateMesh = new THREE.Mesh(plateGeo, this.mushikaGoldenArmorMaterial);
+    plateMesh.rotation.x = -0.3;
+    headArmorGroup.add(plateMesh);
+
+    // Central golden arch & jewel
+    const archGeo = new THREE.TorusGeometry(0.12, 0.025, 8, 16);
+    archGeo.rotateX(Math.PI / 2);
+    const archMesh = new THREE.Mesh(archGeo, this.shinyGoldMaterial);
+    archMesh.position.set(0, 0.03, -0.06);
+    headArmorGroup.add(archMesh);
+
+    const headJewelGeo = new THREE.SphereGeometry(0.04, 8, 8);
+    const headJewelMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.1, metalness: 0.9 });
+    const headJewel = new THREE.Mesh(headJewelGeo, headJewelMat);
+    headJewel.position.set(0, 0.04, -0.06);
+    headArmorGroup.add(headJewel);
+
+    mooshikaGroup.add(headArmorGroup);
+
+    // 4. Animated Gallop Legs with Gold Anklets on Paws
+    const legGeo = new THREE.CapsuleGeometry(0.11, 0.36, 8, 8);
     const legPositions = [
-      { x: -0.42, y: -0.22, z: -0.45 },
-      { x: 0.42, y: -0.22, z: -0.45 },
-      { x: -0.45, y: -0.22, z: 0.55 },
-      { x: 0.45, y: -0.22, z: 0.55 },
+      { x: -0.44, y: -0.22, z: -0.45 },
+      { x: 0.44, y: -0.22, z: -0.45 },
+      { x: -0.46, y: -0.22, z: 0.55 },
+      { x: 0.46, y: -0.22, z: 0.55 },
     ];
+
     legPositions.forEach((pos) => {
-      const leg = new THREE.Mesh(legGeo, this.mooshikaGreyMaterial);
+      const leg = new THREE.Mesh(legGeo, this.mushikaDarkFurMaterial);
       leg.position.set(pos.x, pos.y, pos.z);
       leg.castShadow = true;
 
-      // Small pink paw at foot
-      const pawGeo = new THREE.SphereGeometry(0.07, 8, 8);
+      // Paw with claws
+      const pawGeo = new THREE.SphereGeometry(0.075, 8, 8);
       const paw = new THREE.Mesh(pawGeo, this.pinkSkinMaterial);
-      paw.position.set(0, -0.18, 0.04);
+      paw.position.set(0, -0.19, 0.04);
       leg.add(paw);
+
+      // Claws (dark tiny cones)
+      for (let c = -1; c <= 1; c++) {
+        const clawGeo = new THREE.ConeGeometry(0.015, 0.05, 6);
+        clawGeo.rotateX(Math.PI / 2);
+        const clawMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
+        const claw = new THREE.Mesh(clawGeo, clawMat);
+        claw.position.set(c * 0.035, -0.2, 0.1);
+        leg.add(claw);
+      }
+
+      // Golden Anklet (Kada) above Paw (Matching Reference Image)
+      const ankletGeo = new THREE.TorusGeometry(0.09, 0.022, 8, 16);
+      ankletGeo.rotateX(Math.PI / 2);
+      const anklet = new THREE.Mesh(ankletGeo, this.shinyGoldMaterial);
+      anklet.position.set(0, -0.14, 0);
+      leg.add(anklet);
 
       mooshikaGroup.add(leg);
       legs.push(leg);
     });
 
-    // Swishing Grey Rat Tail
+    // 5. Swishing Dark Grey Tail
     const tailGroup = new THREE.Group();
-    tailGroup.position.set(0, 0.1, 0.9);
+    tailGroup.position.set(0, 0.1, 0.95);
     const tailCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0.2, 0.35),
-      new THREE.Vector3(0.08, 0.45, 0.7),
-      new THREE.Vector3(-0.05, 0.65, 0.9),
+      new THREE.Vector3(0, 0.22, 0.35),
+      new THREE.Vector3(0.09, 0.48, 0.72),
+      new THREE.Vector3(-0.06, 0.68, 0.95),
     ]);
-    const tailGeo = new THREE.TubeGeometry(tailCurve, 12, 0.05, 8, false);
-    const tailMesh = new THREE.Mesh(tailGeo, this.mooshikaGreyMaterial);
+    const tailGeo = new THREE.TubeGeometry(tailCurve, 14, 0.05, 8, false);
+    const tailMesh = new THREE.Mesh(tailGeo, this.mushikaDarkFurMaterial);
     tailGroup.add(tailMesh);
     mooshikaGroup.add(tailGroup);
 
-    // Royal Saddle Cloth with Intricate Gold Brocade & Tassels
-    const saddleMat = new THREE.MeshStandardMaterial({
-      color: 0x6b21a8,
-      map: ThreeModelBuilder.cachedSaddleTexture,
-      roughness: 0.35,
-      metalness: 0.25,
-    });
-    const saddleGeo = new THREE.BoxGeometry(0.92, 0.08, 0.98);
-    const saddleMesh = new THREE.Mesh(saddleGeo, saddleMat);
-    saddleMesh.position.set(0, 0.4, 0.05);
+    // 6. RED AND GOLD SADDLE BLANKET WITH TASSELS (Matching Reference Image)
+    const saddleGeo = new THREE.BoxGeometry(0.96, 0.09, 1.05);
+    const saddleMesh = new THREE.Mesh(saddleGeo, this.saddleCrimsonMaterial);
+    saddleMesh.position.set(0, 0.41, 0.06);
     saddleMesh.castShadow = true;
 
-    const trimGeo = new THREE.BoxGeometry(0.98, 0.05, 1.05);
+    // Gold Brocade Trim Border
+    const trimGeo = new THREE.BoxGeometry(1.02, 0.06, 1.12);
     const trimMesh = new THREE.Mesh(trimGeo, this.shinyGoldMaterial);
-    trimMesh.position.set(0, 0.38, 0.05);
+    trimMesh.position.set(0, 0.39, 0.06);
     mooshikaGroup.add(trimMesh, saddleMesh);
 
-    // Golden Collar & Bell on Mooshika's Chest
-    const collarGeo = new THREE.TorusGeometry(0.32, 0.04, 8, 18);
+    // Golden Hanging Tassels along left, right, and rear
+    const tasselPositions = [
+      // Left side tassels
+      { x: -0.5, y: 0.36, z: -0.3 },
+      { x: -0.5, y: 0.36, z: 0.05 },
+      { x: -0.5, y: 0.36, z: 0.4 },
+      // Right side tassels
+      { x: 0.5, y: 0.36, z: -0.3 },
+      { x: 0.5, y: 0.36, z: 0.05 },
+      { x: 0.5, y: 0.36, z: 0.4 },
+      // Rear tassels
+      { x: -0.25, y: 0.36, z: 0.58 },
+      { x: 0.25, y: 0.36, z: 0.58 },
+    ];
+
+    tasselPositions.forEach((tp) => {
+      const tasselGrp = new THREE.Group();
+      tasselGrp.position.set(tp.x, tp.y, tp.z);
+
+      // Gold bead bulb
+      const beadGeo = new THREE.SphereGeometry(0.035, 8, 8);
+      const bead = new THREE.Mesh(beadGeo, this.shinyGoldMaterial);
+      bead.position.y = -0.02;
+
+      // Hanging gold tassel skirt
+      const skirtGeo = new THREE.ConeGeometry(0.035, 0.1, 8);
+      const skirt = new THREE.Mesh(skirtGeo, this.goldMaterial);
+      skirt.position.y = -0.08;
+
+      tasselGrp.add(bead, skirt);
+      mooshikaGroup.add(tasselGrp);
+      tassels.push(tasselGrp);
+    });
+
+    // 7. Golden Collar & Bell on Mooshika's Chest
+    const collarGeo = new THREE.TorusGeometry(0.34, 0.045, 8, 20);
     collarGeo.rotateX(Math.PI / 2);
     const collarMesh = new THREE.Mesh(collarGeo, this.shinyGoldMaterial);
-    collarMesh.position.set(0, 0.1, -0.72);
+    collarMesh.position.set(0, 0.1, -0.74);
 
-    const bellGeo = new THREE.SphereGeometry(0.09, 12, 12);
+    const bellGeo = new THREE.SphereGeometry(0.1, 12, 12);
     const bellMesh = new THREE.Mesh(bellGeo, this.shinyGoldMaterial);
-    bellMesh.position.set(0, -0.05, -0.85);
+    bellMesh.position.set(0, -0.06, -0.87);
     mooshikaGroup.add(collarMesh, bellMesh);
 
     characterRotator.add(mooshikaGroup);
 
-    // --- LORD GANESHA (ROYAL PURPLE SILK & INTRICATE GOLD JEWELRY) ---
+    // --- LORD GANESHA (WARM GOLD & SAFFRON DHOTI, JEWELRY & 4 ARMS) ---
     const ganeshaGroup = new THREE.Group();
     ganeshaGroup.position.set(0, 0.88, 0.05);
 
-    // Royal Purple Silk Dhoti Seated Sukhasana Pose
-    const dhotiGeo = new THREE.CylinderGeometry(0.48, 0.62, 0.42, 16);
-    const dhotiMesh = new THREE.Mesh(dhotiGeo, this.royalSilkMaterial);
+    // 1. Warm Saffron Silk Dhoti Seated in Sukhasana Pose (Matching Reference Image)
+    const dhotiGeo = new THREE.CylinderGeometry(0.48, 0.64, 0.42, 18);
+    const dhotiMesh = new THREE.Mesh(dhotiGeo, this.saffronDhotiMaterial);
     dhotiMesh.position.set(0, 0.12, 0);
     dhotiMesh.castShadow = true;
     ganeshaGroup.add(dhotiMesh);
 
     // Gold Embroidered Dhoti Pleats
-    const pleatsGeo = new THREE.BoxGeometry(0.24, 0.42, 0.15);
+    const pleatsGeo = new THREE.BoxGeometry(0.25, 0.42, 0.16);
     const pleatsMesh = new THREE.Mesh(pleatsGeo, this.shinyGoldMaterial);
     pleatsMesh.position.set(0, 0.1, -0.46);
     ganeshaGroup.add(pleatsMesh);
 
     // Golden Waist Belt (Kamarband) with Dangling Jewels
-    const beltGeo = new THREE.TorusGeometry(0.5, 0.05, 8, 24);
+    const beltGeo = new THREE.TorusGeometry(0.51, 0.055, 8, 24);
     beltGeo.rotateX(Math.PI / 2);
     const beltMesh = new THREE.Mesh(beltGeo, this.shinyGoldMaterial);
     beltMesh.position.set(0, 0.3, 0);
     ganeshaGroup.add(beltMesh);
 
-    // Torso (Lambodara - Chubby Divine Golden-Amber Belly)
-    const bellyGeo = new THREE.SphereGeometry(0.48, 16, 16);
-    bellyGeo.scale(1.05, 1.0, 0.95);
+    // 2. Torso (Lambodara - Chubby Divine Golden-Amber Belly)
+    const bellyGeo = new THREE.SphereGeometry(0.49, 18, 18);
+    bellyGeo.scale(1.06, 1.0, 0.96);
     const bellyMesh = new THREE.Mesh(bellyGeo, this.ganeshaSkinMaterial);
     bellyMesh.position.set(0, 0.6, -0.02);
     bellyMesh.castShadow = true;
     ganeshaGroup.add(bellyMesh);
 
-    // Royal Purple Silk Angavastram (Shoulder Sash)
+    // Saffron Silk Angavastram (Shoulder Sash)
     const sashCurve = new THREE.CatmullRomCurve3([
       new THREE.Vector3(-0.4, 0.85, -0.1),
       new THREE.Vector3(-0.1, 0.75, -0.32),
       new THREE.Vector3(0.3, 0.55, -0.2),
       new THREE.Vector3(0.42, 0.4, 0.1),
     ]);
-    const sashGeo = new THREE.TubeGeometry(sashCurve, 12, 0.07, 8, false);
-    const sashMesh = new THREE.Mesh(sashGeo, this.royalSilkMaterial);
+    const sashGeo = new THREE.TubeGeometry(sashCurve, 14, 0.075, 8, false);
+    const sashMesh = new THREE.Mesh(sashGeo, this.saffronDhotiMaterial);
     ganeshaGroup.add(sashMesh);
 
     // Sacred Thread (Yajnopavita) across Chest
-    const threadGeo = new THREE.TorusGeometry(0.44, 0.02, 6, 24);
+    const threadGeo = new THREE.TorusGeometry(0.45, 0.022, 6, 24);
     threadGeo.rotateX(Math.PI / 3);
     threadGeo.rotateZ(Math.PI / 4);
     const threadMesh = new THREE.Mesh(threadGeo, this.shinyGoldMaterial);
     threadMesh.position.set(0, 0.65, 0);
     ganeshaGroup.add(threadMesh);
 
+    // Beautiful Flower Garland (Marigold Orange & Yellow) over Chest
+    const garlandGroup = this.createFlowerGarland();
+    garlandGroup.position.set(0, 0.75, -0.15);
+    ganeshaGroup.add(garlandGroup);
+
     // Layered Golden Necklaces (Kanthi)
-    const necklaceGeo = new THREE.TorusGeometry(0.36, 0.045, 8, 20);
+    const necklaceGeo = new THREE.TorusGeometry(0.37, 0.045, 8, 22);
     necklaceGeo.rotateX(Math.PI / 2);
     const necklaceMesh = new THREE.Mesh(necklaceGeo, this.shinyGoldMaterial);
     necklaceMesh.position.set(0, 0.9, -0.05);
 
-    const innerNecklaceGeo = new THREE.TorusGeometry(0.28, 0.035, 8, 18);
+    const innerNecklaceGeo = new THREE.TorusGeometry(0.29, 0.035, 8, 20);
     innerNecklaceGeo.rotateX(Math.PI / 2);
     const innerNecklace = new THREE.Mesh(innerNecklaceGeo, this.goldMaterial);
     innerNecklace.position.set(0, 0.95, -0.08);
     ganeshaGroup.add(necklaceMesh, innerNecklace);
 
-    // Elephant Head
-    const headBaseGeo = new THREE.SphereGeometry(0.38, 16, 16);
+    // 3. Elephant Head
+    const headBaseGeo = new THREE.SphereGeometry(0.39, 18, 18);
     headBaseGeo.scale(1.0, 1.05, 0.95);
     const headBaseMesh = new THREE.Mesh(headBaseGeo, this.ganeshaSkinMaterial);
     headBaseMesh.position.set(0, 1.25, -0.06);
@@ -959,19 +1365,19 @@ export class ThreeModelBuilder {
       new THREE.Vector3(0.08, 0.72, -0.52),
       new THREE.Vector3(0.22, 0.78, -0.48),
     ]);
-    const trunkGeo = new THREE.TubeGeometry(trunkCurve, 16, 0.11, 10, false);
+    const trunkGeo = new THREE.TubeGeometry(trunkCurve, 18, 0.11, 10, false);
     const trunkMesh = new THREE.Mesh(trunkGeo, this.ganeshaSkinMaterial);
     trunkMesh.castShadow = true;
 
     // Golden trunk tip ring
-    const trunkRingGeo = new THREE.TorusGeometry(0.1, 0.025, 6, 12);
+    const trunkRingGeo = new THREE.TorusGeometry(0.1, 0.025, 6, 14);
     const trunkRing = new THREE.Mesh(trunkRingGeo, this.shinyGoldMaterial);
     trunkRing.position.set(0.2, 0.77, -0.48);
     ganeshaGroup.add(trunkMesh, trunkRing);
 
-    // Sacred Red Tilak & Golden Trishul on Forehead
+    // Sacred Red Tilak on Forehead (Matching Reference)
     const tilakGeo = new THREE.BoxGeometry(0.08, 0.16, 0.02);
-    const tilakMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const tilakMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
     const tilakMesh = new THREE.Mesh(tilakGeo, tilakMat);
     tilakMesh.position.set(0, 1.4, -0.42);
     ganeshaGroup.add(tilakMesh);
@@ -984,44 +1390,53 @@ export class ThreeModelBuilder {
     rightTusk.position.set(-0.16, 1.04, -0.36);
     ganeshaGroup.add(rightTusk);
 
-    // Flapping Divine Elephant Ears with Intricate Golden Kundala Earrings
+    // Large Divine Elephant Ears with Golden Kundala Earrings
     const leftEarGroup = new THREE.Group();
     const rightEarGroup = new THREE.Group();
 
-    const earGeo = new THREE.CylinderGeometry(0.3, 0.22, 0.04, 16);
+    const earGeo = new THREE.CylinderGeometry(0.32, 0.24, 0.04, 18);
     earGeo.rotateZ(Math.PI / 2);
 
     const leftEarMesh = new THREE.Mesh(earGeo, this.ganeshaSkinMaterial);
-    leftEarMesh.position.set(-0.46, 1.25, -0.06);
+    leftEarMesh.position.set(-0.48, 1.25, -0.06);
     leftEarMesh.rotation.y = -0.25;
     leftEarGroup.add(leftEarMesh);
 
-    const earringGeo = new THREE.TorusGeometry(0.08, 0.02, 6, 16);
+    const earringGeo = new THREE.TorusGeometry(0.085, 0.022, 6, 16);
     const leftEarring = new THREE.Mesh(earringGeo, this.shinyGoldMaterial);
-    leftEarring.position.set(-0.48, 1.02, -0.06);
+    leftEarring.position.set(-0.5, 1.02, -0.06);
     leftEarGroup.add(leftEarring);
 
     const rightEarMesh = new THREE.Mesh(earGeo, this.ganeshaSkinMaterial);
-    rightEarMesh.position.set(0.46, 1.25, -0.06);
+    rightEarMesh.position.set(0.48, 1.25, -0.06);
     rightEarMesh.rotation.y = 0.25;
     rightEarGroup.add(rightEarMesh);
 
     const rightEarring = new THREE.Mesh(earringGeo, this.shinyGoldMaterial);
-    rightEarring.position.set(0.48, 1.02, -0.06);
+    rightEarring.position.set(0.5, 1.02, -0.06);
     rightEarGroup.add(rightEarring);
 
     ganeshaGroup.add(leftEarGroup, rightEarGroup);
     ears.push(leftEarGroup, rightEarGroup);
 
-    // 4 Divine Arms with Golden Armlets (Bajubands) & Bangles (Kadas)
+    // 4. Long Flowing Dark Hair Cascading behind Crown (Matching Reference Image)
+    const hairGroup = this.createFlowingDarkHair();
+    hairGroup.position.set(0, 1.35, 0.08);
+    ganeshaGroup.add(hairGroup);
+
+    // 5. Four Divine Arms with Sacred Items (Matching Reference Image)
+    // - Axe in upper right hand
+    // - Pink Lotus in upper left hand
+    // - Bowl of Modak sweets in lower left hand
+    // - Abhaya Mudra blessing pose in lower right hand
     this.attachGaneshaArms(ganeshaGroup);
 
-    // Magnificent Tiered Golden Mukut (Crown) with Jewels
+    // 6. Magnificent Tiered Golden Mukut (Crown) with Jewels
     const mukutGroup = this.createMagnificentMukut();
     mukutGroup.position.set(0, 1.55, -0.06);
     ganeshaGroup.add(mukutGroup);
 
-    // Radiant Sun Halo Aura (Prabhavali)
+    // 7. Soft Golden Aura (Prabhavali)
     const auraInnerGeo = new THREE.RingGeometry(0.68, 0.92, 24);
     const auraInnerMat = new THREE.MeshBasicMaterial({
       color: 0xfde047,
@@ -1057,14 +1472,74 @@ export class ThreeModelBuilder {
       auraInner,
       auraOuter,
       ears,
+      mooshikaGroup,
+      ganeshaGroup,
+      tassels,
+      hairGroup,
     };
   }
 
-  // Arms and sacred items
+  // Long Flowing Dark Hair Cascading behind Crown
+  private createFlowingDarkHair(): THREE.Group {
+    const group = new THREE.Group();
+
+    // Cascading strands down shoulders and back
+    const strands = [
+      // Left shoulder cascade
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(-0.25, 0.1, -0.05),
+        new THREE.Vector3(-0.42, -0.15, -0.02),
+        new THREE.Vector3(-0.46, -0.45, 0.04),
+      ]),
+      // Right shoulder cascade
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0.25, 0.1, -0.05),
+        new THREE.Vector3(0.42, -0.15, -0.02),
+        new THREE.Vector3(0.46, -0.45, 0.04),
+      ]),
+      // Center back cascade
+      new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, 0.15, 0.02),
+        new THREE.Vector3(0, -0.2, 0.12),
+        new THREE.Vector3(0, -0.55, 0.18),
+      ]),
+    ];
+
+    strands.forEach((curve) => {
+      const geo = new THREE.TubeGeometry(curve, 12, 0.065, 8, false);
+      const mesh = new THREE.Mesh(geo, this.hairMaterial);
+      group.add(mesh);
+    });
+
+    return group;
+  }
+
+  // Flower Garland cascading over chest
+  private createFlowerGarland(): THREE.Group {
+    const group = new THREE.Group();
+    const flowerCount = 12;
+
+    for (let i = 0; i < flowerCount; i++) {
+      const angle = (i / (flowerCount - 1)) * Math.PI;
+      const x = Math.cos(angle) * 0.32;
+      const y = -Math.sin(angle) * 0.36;
+      const z = -Math.sin(angle) * 0.1;
+
+      const geo = new THREE.SphereGeometry(0.045, 8, 8);
+      const mat = i % 2 === 0 ? this.marigoldOrangeMaterial : this.marigoldYellowMaterial;
+      const flower = new THREE.Mesh(geo, mat);
+      flower.position.set(x, y, z);
+      group.add(flower);
+    }
+
+    return group;
+  }
+
+  // 4 Divine Arms with Sacred Items (Matching Reference Image)
   private attachGaneshaArms(parent: THREE.Group) {
     const armGeo = new THREE.CapsuleGeometry(0.08, 0.28, 6, 8);
 
-    // Upper Right Arm (Holding Parashu Axe)
+    // 1. Upper Right Arm (Holding Sacred Golden Axe - Parashu)
     const upRightArm = new THREE.Mesh(armGeo, this.ganeshaSkinMaterial);
     upRightArm.position.set(0.48, 0.92, 0.05);
     upRightArm.rotation.z = -0.6;
@@ -1074,43 +1549,171 @@ export class ThreeModelBuilder {
     axe.position.set(0, 0.22, 0);
     upRightArm.add(axe);
 
-    // Upper Left Arm (Holding Pasha Noose)
+    // 2. Upper Left Arm (Holding Sacred Pink Lotus - Padma)
     const upLeftArm = new THREE.Mesh(armGeo, this.ganeshaSkinMaterial);
     upLeftArm.position.set(-0.48, 0.92, 0.05);
     upLeftArm.rotation.z = 0.6;
     upLeftArm.rotation.x = -0.3;
 
-    const noose = this.createNoose();
-    noose.position.set(0, 0.22, 0);
-    upLeftArm.add(noose);
+    const lotus = this.createSacredLotus();
+    lotus.position.set(0, 0.22, 0);
+    upLeftArm.add(lotus);
 
-    // Lower Left Arm (Holding Golden Modak in Palm)
+    // 3. Lower Left Arm (Holding Bowl of Modak Sweets)
     const lowLeftArm = new THREE.Mesh(armGeo, this.ganeshaSkinMaterial);
     lowLeftArm.position.set(-0.42, 0.65, -0.18);
     lowLeftArm.rotation.z = 0.4;
     lowLeftArm.rotation.x = 0.5;
 
-    const palmModak = this.createMiniModak();
-    palmModak.position.set(0, 0.2, 0.05);
-    lowLeftArm.add(palmModak);
+    const modakBowl = this.createModakBowl();
+    modakBowl.position.set(0, 0.2, 0.05);
+    lowLeftArm.add(modakBowl);
 
-    // Lower Right Arm (Abhaya Mudra - Blessing & Protection)
+    // 4. Lower Right Arm (Abhaya Mudra - Blessing & Protection Pose)
     const lowRightArm = new THREE.Mesh(armGeo, this.ganeshaSkinMaterial);
     lowRightArm.position.set(0.42, 0.65, -0.18);
     lowRightArm.rotation.z = -0.4;
     lowRightArm.rotation.x = -0.3;
 
-    // Golden Armlets (Bajubands)
+    const abhayaHand = this.createAbhayaMudraHand();
+    abhayaHand.position.set(0, 0.2, 0.05);
+    lowRightArm.add(abhayaHand);
+
+    // Golden Armlets (Bajubands) & Bangles (Kadas) on all 4 arms
     [upRightArm, upLeftArm, lowLeftArm, lowRightArm].forEach((arm) => {
-      const armletGeo = new THREE.TorusGeometry(0.09, 0.02, 6, 12);
+      // Armlet on upper arm
+      const armletGeo = new THREE.TorusGeometry(0.09, 0.02, 6, 14);
       const armlet = new THREE.Mesh(armletGeo, this.shinyGoldMaterial);
       armlet.position.set(0, 0.05, 0);
-      arm.add(armlet);
+
+      // Bangle on wrist
+      const bangleGeo = new THREE.TorusGeometry(0.08, 0.02, 6, 14);
+      const bangle = new THREE.Mesh(bangleGeo, this.shinyGoldMaterial);
+      bangle.position.set(0, 0.16, 0);
+
+      arm.add(armlet, bangle);
     });
 
     parent.add(upRightArm, upLeftArm, lowLeftArm, lowRightArm);
   }
 
+  // Sacred Axe (Parashu)
+  private createSacredAxe(): THREE.Group {
+    const group = new THREE.Group();
+    const handleGeo = new THREE.CylinderGeometry(0.02, 0.025, 0.45, 8);
+    const handle = new THREE.Mesh(handleGeo, this.shinyGoldMaterial);
+
+    const bladeGeo = new THREE.BoxGeometry(0.15, 0.2, 0.03);
+    const blade = new THREE.Mesh(bladeGeo, this.goldMaterial);
+    blade.position.set(0.09, 0.16, 0);
+
+    // Ornate finial on top of axe
+    const finialGeo = new THREE.SphereGeometry(0.035, 8, 8);
+    const finial = new THREE.Mesh(finialGeo, this.shinyGoldMaterial);
+    finial.position.y = 0.24;
+
+    group.add(handle, blade, finial);
+    group.scale.set(0.85, 0.85, 0.85);
+    return group;
+  }
+
+  // Sacred Pink Lotus Flower (Padma) (Matching Reference Image)
+  private createSacredLotus(): THREE.Group {
+    const group = new THREE.Group();
+
+    // Stem
+    const stemGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8);
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.5 });
+    const stem = new THREE.Mesh(stemGeo, stemMat);
+    stem.position.y = -0.1;
+    group.add(stem);
+
+    // Golden Stamen Center
+    const centerGeo = new THREE.SphereGeometry(0.05, 10, 10);
+    const center = new THREE.Mesh(centerGeo, this.lotusCenterMaterial);
+    center.position.y = 0.06;
+    group.add(center);
+
+    // Tier 1: Inner Petals (6 petals)
+    const innerPetalGeo = new THREE.ConeGeometry(0.04, 0.12, 6);
+    innerPetalGeo.rotateX(Math.PI / 4);
+    for (let i = 0; i < 6; i++) {
+      const angle = (i / 6) * Math.PI * 2;
+      const petal = new THREE.Mesh(innerPetalGeo, this.lotusPetalMaterial);
+      petal.position.set(Math.cos(angle) * 0.04, 0.06, Math.sin(angle) * 0.04);
+      petal.rotation.y = -angle;
+      group.add(petal);
+    }
+
+    // Tier 2: Outer Petals (8 petals spreading outward)
+    const outerPetalGeo = new THREE.ConeGeometry(0.05, 0.15, 6);
+    outerPetalGeo.rotateX(Math.PI / 3);
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const petal = new THREE.Mesh(outerPetalGeo, this.lotusPetalMaterial);
+      petal.position.set(Math.cos(angle) * 0.07, 0.04, Math.sin(angle) * 0.07);
+      petal.rotation.y = -angle;
+      group.add(petal);
+    }
+
+    group.scale.set(0.9, 0.9, 0.9);
+    return group;
+  }
+
+  // Golden Bowl filled with Modak Sweets (Matching Reference Image)
+  private createModakBowl(): THREE.Group {
+    const group = new THREE.Group();
+
+    // Golden Ornate Bowl
+    const bowlGeo = new THREE.CylinderGeometry(0.14, 0.08, 0.08, 14);
+    const bowl = new THREE.Mesh(bowlGeo, this.shinyGoldMaterial);
+    group.add(bowl);
+
+    // Pyramid mound of golden modak sweets
+    const modakCount = 7;
+    for (let m = 0; m < modakCount; m++) {
+      const angle = (m / (modakCount - 1)) * Math.PI * 2;
+      const radius = m === modakCount - 1 ? 0 : 0.07;
+      const yOffset = m === modakCount - 1 ? 0.08 : 0.04;
+
+      const sweetGeo = new THREE.ConeGeometry(0.035, 0.06, 8);
+      const sweet = new THREE.Mesh(sweetGeo, this.shinyGoldMaterial);
+      sweet.position.set(Math.cos(angle) * radius, yOffset, Math.sin(angle) * radius);
+      group.add(sweet);
+    }
+
+    group.scale.set(0.9, 0.9, 0.9);
+    return group;
+  }
+
+  // Abhaya Mudra Hand with Sacred Red Palm Mark (Matching Reference Image)
+  private createAbhayaMudraHand(): THREE.Group {
+    const group = new THREE.Group();
+
+    // Open Palm
+    const palmGeo = new THREE.BoxGeometry(0.09, 0.12, 0.03);
+    const palm = new THREE.Mesh(palmGeo, this.ganeshaSkinMaterial);
+    group.add(palm);
+
+    // Sacred Red Auspicious Mark on Palm
+    const markGeo = new THREE.CircleGeometry(0.025, 12);
+    const markMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+    const mark = new THREE.Mesh(markGeo, markMat);
+    mark.position.set(0, 0, 0.016);
+    group.add(mark);
+
+    // Fingers extended upward in blessing pose
+    for (let f = -1.5; f <= 1.5; f++) {
+      const fingerGeo = new THREE.CapsuleGeometry(0.012, 0.05, 4, 6);
+      const finger = new THREE.Mesh(fingerGeo, this.ganeshaSkinMaterial);
+      finger.position.set(f * 0.022, 0.08, 0);
+      group.add(finger);
+    }
+
+    return group;
+  }
+
+  // Magnificent Tiered Golden Mukut (Crown) with Jewels (Matching Reference Image)
   private createMagnificentMukut(): THREE.Group {
     const group = new THREE.Group();
 
@@ -1148,32 +1751,6 @@ export class ThreeModelBuilder {
 
     group.add(base, mid, top, spire);
     return group;
-  }
-
-  private createSacredAxe(): THREE.Group {
-    const group = new THREE.Group();
-    const handleGeo = new THREE.CylinderGeometry(0.02, 0.025, 0.45, 8);
-    const handle = new THREE.Mesh(handleGeo, this.shinyGoldMaterial);
-
-    const bladeGeo = new THREE.BoxGeometry(0.14, 0.18, 0.03);
-    const blade = new THREE.Mesh(bladeGeo, this.goldMaterial);
-    blade.position.set(0.08, 0.16, 0);
-    group.add(handle, blade);
-    group.scale.set(0.8, 0.8, 0.8);
-    return group;
-  }
-
-  private createNoose(): THREE.Group {
-    const group = new THREE.Group();
-    const loopGeo = new THREE.TorusGeometry(0.12, 0.025, 8, 16);
-    const loop = new THREE.Mesh(loopGeo, this.shinyGoldMaterial);
-    group.add(loop);
-    return group;
-  }
-
-  private createMiniModak(): THREE.Mesh {
-    const geo = new THREE.ConeGeometry(0.08, 0.14, 12);
-    return new THREE.Mesh(geo, this.shinyGoldMaterial);
   }
 
   // =========================================================================
@@ -1435,65 +2012,43 @@ export class ThreeModelBuilder {
   }
 
   // =========================================================================
-  // 5. GREY STONE ROAD WITH CARVED MANDALA PATTERNS IN CENTER OF LANES
+  // 5. MOUNTAIN TRAIL WITH DENSE FOREST ON LEFT & RIGHT SIDES (TASK 1)
   // =========================================================================
   public createRoadSegment(length: number): THREE.Group {
     const segment = new THREE.Group();
+    segment.name = 'MOUNTAIN_ROAD_SEGMENT';
 
-    // 1. Grey Stone Paved Road Surface
-    const roadMesh = new THREE.Mesh(this.roadPlaneGeo, this.greyStoneRoadMaterial);
+    // 1. Mountain Trail Dirt Surface (Earthy mountain trail texture)
+    const roadMesh = new THREE.Mesh(this.roadPlaneGeo, this.mountainTrailMaterial);
     segment.add(roadMesh);
 
-    // 2. Brass Inlay Lane Dividers for the 3 Lanes
+    // 2. Clear 3-Lane Dividers (Soft golden sandstone/brass inlay)
+    // Keeps the 3 running lanes completely clear and readable so obstacles and player are easy to see!
     [-LANE_WIDTH / 2 - 0.1, LANE_WIDTH / 2 + 0.1].forEach((lx) => {
       const lineMesh = new THREE.Mesh(this.roadLineGeo, this.goldMaterial);
       lineMesh.position.set(lx, 0.015, 0);
       segment.add(lineMesh);
     });
 
-    // 3. Intricate Carved Mandala Relief Patterns in the Center of Lanes
-    // Placed in each of the 3 lanes (Left: -2.4, Center: 0, Right: +2.4)
-    // spaced along the stone road!
-    const mandalaStep = 12.5;
-
-    for (let pz = -length / 2 + 6; pz <= length / 2 - 6; pz += mandalaStep) {
-      // Center Lane Grand Carved Mandala
-      const centerMandala = new THREE.Mesh(this.mandalaDecalGeo, this.carvedMandalaMaterial);
-      centerMandala.position.set(0, 0.018, pz);
-      segment.add(centerMandala);
-
-      // Left & Right Lane Mandalas (Staggered by 6 meters)
-      const staggeredZ = pz + 6 <= length / 2 - 6 ? pz + 6 : pz - 6;
-      [-LANE_WIDTH, LANE_WIDTH].forEach((lx) => {
-        const laneMandala = new THREE.Mesh(this.mandalaDecalGeo, this.carvedMandalaMaterial);
-        laneMandala.position.set(lx, 0.018, staggeredZ);
-        segment.add(laneMandala);
-      });
-    }
-
-    // 4. Side Grey Stone Curbs
+    // 3. Natural Mountain Trail Curbs (Mossy granite stone edges)
     const roadWidth = 8.6;
-    const leftCurb = new THREE.Mesh(this.roadCurbGeo, this.carvedPillarMaterial);
+    const leftCurb = new THREE.Mesh(this.roadCurbGeo, this.mountainRockMaterial);
     leftCurb.position.set(-roadWidth / 2 - 0.32, 0.16, 0);
-    const rightCurb = new THREE.Mesh(this.roadCurbGeo, this.carvedPillarMaterial);
+    const rightCurb = new THREE.Mesh(this.roadCurbGeo, this.mountainRockMaterial);
     rightCurb.position.set(roadWidth / 2 + 0.32, 0.16, 0);
     segment.add(leftCurb, rightCurb);
 
-    // 5. Ancient Stone Pillars and Lit Diyas along the Curbs (Clean, optimized spacing)
-    const lampStep = 20;
-    for (let pz = -length / 2 + 10; pz <= length / 2 - 10; pz += lampStep) {
-      const isPillar = (Math.abs(Math.round(pz / lampStep)) % 2) === 0;
+    // 4. DENSE FOREST ON LEFT AND RIGHT SIDES (TASK 1)
+    // Seamlessly looping layered pines, broadleaf mixed trees, bushes, rocks, and ferns
+    this.populateDenseForestSides(segment, length, roadWidth);
 
-      [-roadWidth / 2 - 0.8, roadWidth / 2 + 0.8].forEach((px) => {
-        if (isPillar) {
-          const pillar = this.createRoadsidePillar();
-          pillar.position.set(px, 0.16, pz);
-          segment.add(pillar);
-        } else {
-          const diyaPost = this.createGlowingDiyaPost();
-          diyaPost.position.set(px, 0.16, pz);
-          segment.add(diyaPost);
-        }
+    // 5. Rustic Stone Pedestals with Lit Diyas along the Trail Borders
+    const lampStep = 25;
+    for (let pz = -length / 2 + 12; pz <= length / 2 - 12; pz += lampStep) {
+      [-roadWidth / 2 - 0.9, roadWidth / 2 + 0.9].forEach((px) => {
+        const diyaPost = this.createGlowingDiyaPost();
+        diyaPost.position.set(px, 0.16, pz);
+        segment.add(diyaPost);
 
         const poolMesh = new THREE.Mesh(this.diyaLightPoolGeo, this.diyaLightPoolMat);
         const roadInwardOffset = px < 0 ? 0.7 : -0.7;
@@ -1502,16 +2057,186 @@ export class ThreeModelBuilder {
       });
     }
 
-    // Occasional decorative wooden cart parked by the roadside
-    const roadsideCart = this.createRoadsideDecorativeCart();
-    roadsideCart.position.set(-roadWidth / 2 - 1.8, 0, -length / 4);
-    segment.add(roadsideCart);
-
     return segment;
   }
 
+  // Helper to populate dense layered pine and mixed forest along trail sides
+  private populateDenseForestSides(segment: THREE.Group, length: number, roadWidth: number) {
+    const sides = [-1, 1]; // -1: Left side, +1: Right side
+
+    sides.forEach((sideSign) => {
+      const baseOffset = (roadWidth / 2 + 1.6) * sideSign;
+
+      // Layer 3 Near Trees: Layered Conifer Pines (14 per segment)
+      const pineOffsets = [
+        { x: 2.2, z: -21, s: 1.35, light: false },
+        { x: 5.8, z: -18, s: 1.15, light: true },
+        { x: 9.5, z: -14, s: 1.55, light: false },
+        { x: 3.4, z: -10, s: 1.25, light: true },
+        { x: 7.2, z: -6, s: 1.45, light: false },
+        { x: 12.0, z: -2, s: 1.65, light: false },
+        { x: 2.6, z: 2, s: 1.30, light: true },
+        { x: 6.4, z: 6, s: 1.40, light: false },
+        { x: 10.5, z: 10, s: 1.50, light: true },
+        { x: 3.8, z: 14, s: 1.20, light: false },
+        { x: 8.0, z: 18, s: 1.45, light: true },
+        { x: 13.5, z: 21, s: 1.60, light: false },
+        { x: 4.5, z: -24, s: 1.35, light: false },
+        { x: 11.0, z: 24, s: 1.50, light: true },
+      ];
+
+      pineOffsets.forEach((p) => {
+        const pine = this.createPineTree(p.s, p.light);
+        pine.position.set(baseOffset + p.x * sideSign, 0, p.z);
+        pine.rotation.y = (p.x * 1.7) % (Math.PI * 2);
+        segment.add(pine);
+      });
+
+      // Layer 3 Near Trees: Broadleaf Mixed Trees (8 per segment)
+      const mixedOffsets = [
+        { x: 4.2, z: -15, s: 1.2, amber: false },
+        { x: 8.2, z: -9, s: 1.35, amber: true },
+        { x: 3.1, z: -3, s: 1.1, amber: false },
+        { x: 7.5, z: 3, s: 1.25, amber: true },
+        { x: 4.8, z: 9, s: 1.15, amber: false },
+        { x: 9.0, z: 15, s: 1.30, amber: true },
+        { x: 6.0, z: -22, s: 1.25, amber: false },
+        { x: 5.5, z: 22, s: 1.2, amber: false },
+      ];
+
+      mixedOffsets.forEach((m) => {
+        const tree = this.createMixedTree(m.s, m.amber);
+        tree.position.set(baseOffset + m.x * sideSign, 0, m.z);
+        tree.rotation.y = (m.x * 2.3) % (Math.PI * 2);
+        segment.add(tree);
+      });
+
+      // Undergrowth: Mountain Bushes (12 per segment)
+      for (let b = 0; b < 12; b++) {
+        const u = (b / 12) - 0.5;
+        const bz = u * (length - 4);
+        const bx = baseOffset + (1.2 + ((b * 3.7) % 6.5)) * sideSign;
+        const bush = this.createForestBush(0.85 + ((b * 1.3) % 0.5));
+        bush.position.set(bx, 0, bz);
+        segment.add(bush);
+      }
+
+      // Undergrowth: Mossy Mountain Rocks (8 per segment)
+      for (let r = 0; r < 8; r++) {
+        const u = (r / 8) - 0.5;
+        const rz = u * (length - 6) + 2;
+        const rx = baseOffset + (0.8 + ((r * 2.9) % 4.5)) * sideSign;
+        const rock = this.createMountainRock(0.75 + ((r * 1.1) % 0.6));
+        rock.position.set(rx, 0, rz);
+        segment.add(rock);
+      }
+
+      // Undergrowth: Fern Patches (6 per segment)
+      for (let f = 0; f < 6; f++) {
+        const u = (f / 6) - 0.5;
+        const fz = u * (length - 8) - 1;
+        const fx = baseOffset + (1.0 + ((f * 2.1) % 3.5)) * sideSign;
+        const fern = this.createFernPatch();
+        fern.position.set(fx, 0, fz);
+        segment.add(fern);
+      }
+    });
+  }
+
+  // Procedural Conifer Pine Tree (Task 1: Layered conifer with tiered needles)
+  public createPineTree(scale: number = 1.0, isLight: boolean = false): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'PINE_TREE';
+
+    // Bark Trunk
+    const trunk = new THREE.Mesh(this.pineTrunkGeo, this.pineBarkMaterial);
+    trunk.position.y = 1.75;
+    trunk.castShadow = true;
+    group.add(trunk);
+
+    // Foliage Tiers
+    const mat = isLight ? this.pineNeedleLightMaterial : this.pineNeedleMaterial;
+    const tier1 = new THREE.Mesh(this.pineTier1Geo, mat);
+    tier1.position.y = 3.2;
+    tier1.castShadow = true;
+    tier1.userData.isFoliage = true;
+
+    const tier2 = new THREE.Mesh(this.pineTier2Geo, mat);
+    tier2.position.y = 4.4;
+    tier2.castShadow = true;
+    tier2.userData.isFoliage = true;
+
+    const tier3 = new THREE.Mesh(this.pineTier3Geo, mat);
+    tier3.position.y = 5.5;
+    tier3.castShadow = true;
+    tier3.userData.isFoliage = true;
+
+    group.add(tier1, tier2, tier3);
+    group.scale.set(scale, scale, scale);
+    return group;
+  }
+
+  // Procedural Broadleaf Mixed Tree (Task 1: Organic foliage canopy)
+  public createMixedTree(scale: number = 1.0, isAmber: boolean = false): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'MIXED_TREE';
+
+    // Trunk
+    const trunk = new THREE.Mesh(this.broadleafTrunkGeo, this.pineBarkMaterial);
+    trunk.position.y = 1.4;
+    trunk.castShadow = true;
+    group.add(trunk);
+
+    // Canopy
+    const mat = isAmber ? this.mixedLeafAmberMaterial : this.mixedLeafMaterial;
+    const canopy = new THREE.Mesh(this.broadleafCanopyGeo, mat);
+    canopy.position.y = 3.2;
+    canopy.scale.set(1.1, 1.25, 1.05);
+    canopy.castShadow = true;
+    canopy.userData.isFoliage = true;
+    group.add(canopy);
+
+    group.scale.set(scale, scale, scale);
+    return group;
+  }
+
+  // Mossy Mountain Rock (Task 1)
+  public createMountainRock(scale: number = 1.0): THREE.Mesh {
+    const rock = new THREE.Mesh(this.mountainRockGeo, this.mountainRockMaterial);
+    rock.position.y = 0.42 * scale;
+    rock.scale.set(scale * 1.1, scale * 0.75, scale * 1.0);
+    rock.rotation.set(0.2, (scale * 3.7) % Math.PI, 0.1);
+    rock.castShadow = true;
+    return rock;
+  }
+
+  // Mountain Undergrowth Bush (Task 1)
+  public createForestBush(scale: number = 1.0): THREE.Mesh {
+    const bush = new THREE.Mesh(this.bushGeo, this.bushMaterial);
+    bush.position.y = 0.38 * scale;
+    bush.scale.set(scale * 1.15, scale * 0.75, scale * 1.15);
+    bush.castShadow = true;
+    bush.userData.isFoliage = true;
+    return bush;
+  }
+
+  // Mountain Trail Fern Patch (Task 1)
+  public createFernPatch(): THREE.Group {
+    const patch = new THREE.Group();
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      const frond = new THREE.Mesh(this.fernGeo, this.fernMaterial);
+      frond.position.set(Math.cos(angle) * 0.28, 0.32, Math.sin(angle) * 0.28);
+      frond.rotation.y = angle;
+      frond.rotation.x = 0.45;
+      frond.userData.isFoliage = true;
+      patch.add(frond);
+    }
+    return patch;
+  }
+
   // Decorative roadside stone pillar without obstacle collision
-  private createRoadsidePillar(): THREE.Group {
+  public createRoadsidePillar(): THREE.Group {
     const group = new THREE.Group();
     const base = new THREE.Mesh(this.pillarBaseGeo, this.carvedPillarMaterial);
     base.position.y = 0.25;
@@ -1530,7 +2255,7 @@ export class ThreeModelBuilder {
     return group;
   }
 
-  private createRoadsideDecorativeCart(): THREE.Group {
+  public createRoadsideDecorativeCart(): THREE.Group {
     const group = this.createWoodenCart();
     group.scale.set(0.85, 0.85, 0.85);
     group.rotation.y = 0.15;
@@ -1577,12 +2302,12 @@ export class ThreeModelBuilder {
   }
 
   // =========================================================================
-  // 6. EARLY MORNING DAWN SKY WITH MASSIVE HORIZON SUN, CREPUSCULAR GOD RAYS & TEMPLE SILHOUETTES
+  // 6. MOUNTAIN FOREST SKY WITH PARALLAX RIDGES & SUN (TASK 1 & TASK 3)
   // =========================================================================
   public createMorningDawnSky(): THREE.Group {
     const skyGroup = new THREE.Group();
 
-    // 1. Sky Dome with Smooth Peach, Pink & Gold Dawn Gradient
+    // 1. Layer 1 (Far): Mountain Sky Dome with Sunrise & Soft Clouds
     const skyGeo = new THREE.SphereGeometry(350, 32, 22);
     const skyMat = new THREE.MeshBasicMaterial({
       map: ThreeModelBuilder.cachedDawnSkyTexture,
@@ -1592,13 +2317,13 @@ export class ThreeModelBuilder {
     const skyMesh = new THREE.Mesh(skyGeo, skyMat);
     skyGroup.add(skyMesh);
 
-    // 2. MASSIVE, BRIGHT GOLDEN-ORANGE SUN DIRECTLY ON FORWARD HORIZON
+    // 2. MASSIVE GOLDEN-ORANGE MORNING SUN ON FORWARD HORIZON
     const sunZ = -340;
     const sunY = 16;
     const sunGroup = new THREE.Group();
     sunGroup.position.set(0, sunY, sunZ);
 
-    // Sun Luminous Core (White-hot golden center)
+    // Sun Luminous Core
     const sunCoreGeo = new THREE.CircleGeometry(42, 36);
     const sunCore = new THREE.Mesh(sunCoreGeo, this.sunCoreMat);
     sunGroup.add(sunCore);
@@ -1625,32 +2350,35 @@ export class ThreeModelBuilder {
 
     skyGroup.add(sunGroup);
 
-    // 3. DISTINCT CREPUSCULAR RAYS (GOD RAYS) BEAMING TOWARD THE CAMERA
-    // Volumetric fan of radiant light shafts radiating from horizon sun toward camera down road corridor
+    // 3. LAYER 1: FAR MISTY MOUNTAIN SILHOUETTES
+    const farMountainGroup = this.createMistyMountainSilhouettes(sunZ + 15);
+    skyGroup.add(farMountainGroup);
+
+    // 4. LAYER 2: MID-DISTANCE MOUNTAIN TREE LINE WITH ATMOSPHERIC HAZE
+    const midTreeLineGroup = this.createMidDistanceTreeLine(sunZ + 55);
+    skyGroup.add(midTreeLineGroup);
+
+    // 5. DISTINCT CREPUSCULAR RAYS (GOD RAYS) BEAMING THROUGH MOUNTAIN PEAKS
     const godRaysGroup = new THREE.Group();
     godRaysGroup.name = 'CREPUSCULAR_GOD_RAYS';
 
     const rayCount = 14;
     for (let i = 0; i < rayCount; i++) {
-      const angleProgress = (i / (rayCount - 1)) - 0.5; // -0.5 to +0.5 spread
-      const fanAngle = angleProgress * 1.35; // Broad angular fan across sky and road
+      const angleProgress = (i / (rayCount - 1)) - 0.5;
+      const fanAngle = angleProgress * 1.35;
 
-      // Angled volumetric ray plane extending from sun (z=-340) forward toward camera (z=20)
       const rayLength = 360;
       const rayWidthEnd = 38 + Math.abs(angleProgress) * 25;
 
       const rayGeo = new THREE.PlaneGeometry(rayWidthEnd, rayLength, 1, 4);
-      // Anchor top to sun center
       rayGeo.translate(0, -rayLength / 2, 0);
 
       const rayMesh = new THREE.Mesh(rayGeo, this.godRayMat);
       rayMesh.position.set(0, sunY + 4, sunZ + 2);
 
-      // Rotate fan outward from sun and tilted forward down along the road corridor
       rayMesh.rotation.z = fanAngle;
       rayMesh.rotation.x = -Math.PI / 2.35 + Math.abs(angleProgress) * 0.15;
 
-      // Unique subtle oscillation data
       rayMesh.userData = {
         baseOpacity: 0.28 + (Math.sin(i * 1.7) * 0.1),
         speed: 0.6 + (i % 3) * 0.25,
@@ -1661,88 +2389,269 @@ export class ThreeModelBuilder {
     }
     skyGroup.add(godRaysGroup);
 
-    // 4. DISTANT SOUTH INDIAN TEMPLE SILHOUETTES ON HORIZON
-    const templeGroup = this.createDistantTempleSilhouettes(sunZ + 10);
-    skyGroup.add(templeGroup);
-
     return skyGroup;
   }
 
-  // Helper to build majestic Dravidian Gopuram (Temple Gateway) silhouettes
-  private createDistantTempleSilhouettes(horizonZ: number): THREE.Group {
+  // High-Detail Rugged Himalayan Alpine Mountain Peak (Matching Reference Image)
+  private createRuggedAlpinePeak(
+    width: number,
+    height: number,
+    snowCoverage: number, // e.g. 0.45 (top 45% is heavy snow)
+    seed: number
+  ): THREE.Group {
     const group = new THREE.Group();
 
-    const templePositions = [
-      // Left Side Temple Skyline
-      { x: -55, scale: 1.4, height: 62 },
-      { x: -95, scale: 1.1, height: 48 },
-      { x: -145, scale: 1.7, height: 75 },
-      { x: -210, scale: 1.3, height: 55 },
-      // Right Side Temple Skyline
-      { x: 55, scale: 1.3, height: 58 },
-      { x: 105, scale: 1.6, height: 72 },
-      { x: 160, scale: 1.2, height: 52 },
-      { x: 220, scale: 1.5, height: 65 },
+    // 1. Procedural Jagged Multi-Arête Mountain Geometry
+    const radialSegments = 10;
+    const heightTiers = 6;
+    const vertices: number[] = [];
+    const uvs: number[] = [];
+    const indices: number[] = [];
+
+    // Apex vertex (the summit peak)
+    vertices.push(0, height, 0);
+    uvs.push(0.5, 0.0);
+
+    // Generate tiers of vertices from near-summit to mountain base
+    for (let t = 1; t <= heightTiers; t++) {
+      const vProgress = t / heightTiers; // 0 near top, 1 at base
+      const tierY = height * (1 - Math.pow(vProgress, 1.25));
+
+      // Base radius flares exponentially towards the ground like real mountains
+      const tierBaseRadius = (width / 2) * Math.pow(vProgress, 0.9);
+
+      for (let s = 0; s < radialSegments; s++) {
+        const angle = (s / radialSegments) * Math.PI * 2;
+
+        // Multi-frequency fractal ridge noise for sharp jagged arêtes
+        const ridgeNoise =
+          Math.sin(angle * 3 + seed * 1.7) * 0.18 +
+          Math.cos(angle * 5 + seed * 3.1) * 0.12 +
+          Math.sin(angle * 8 + t * 2.3) * 0.08;
+
+        const radX = tierBaseRadius * (1.0 + ridgeNoise);
+        const radZ = tierBaseRadius * (0.85 + Math.cos(angle * 2 + seed) * 0.2);
+
+        // Jagged cliff ledges
+        const cliffY = tierY + (Math.sin(angle * 4 + t * 3) * height * 0.04);
+
+        const vx = Math.cos(angle) * radX;
+        const vz = Math.sin(angle) * radZ;
+
+        vertices.push(vx, Math.max(0, cliffY), vz);
+        uvs.push(s / radialSegments, vProgress);
+      }
+    }
+
+    // Connect apex (vertex 0) to tier 1
+    for (let s = 0; s < radialSegments; s++) {
+      const nextS = (s + 1) % radialSegments;
+      indices.push(0, 1 + s, 1 + nextS);
+    }
+
+    // Connect successive tiers with quad triangles
+    for (let t = 1; t < heightTiers; t++) {
+      const currentTierStart = 1 + (t - 1) * radialSegments;
+      const nextTierStart = 1 + t * radialSegments;
+
+      for (let s = 0; s < radialSegments; s++) {
+        const nextS = (s + 1) % radialSegments;
+
+        const c1 = currentTierStart + s;
+        const c2 = currentTierStart + nextS;
+        const n1 = nextTierStart + s;
+        const n2 = nextTierStart + nextS;
+
+        indices.push(c1, n1, c2);
+        indices.push(c2, n1, n2);
+      }
+    }
+
+    const mountainGeo = new THREE.BufferGeometry();
+    mountainGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    mountainGeo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    mountainGeo.setIndex(indices);
+    mountainGeo.computeVertexNormals();
+
+    const mountainMesh = new THREE.Mesh(mountainGeo, this.mountainSlateMaterial);
+    mountainMesh.castShadow = true;
+    mountainMesh.receiveShadow = true;
+    group.add(mountainMesh);
+
+    // 2. High-Altitude Glacial Snow Cap & Jagged Snow Chutes
+    const snowTiers = Math.max(2, Math.round(heightTiers * snowCoverage));
+    const snowVertices: number[] = [];
+    const snowUvs: number[] = [];
+    const snowIndices: number[] = [];
+
+    snowVertices.push(0, height + 0.05, 0); // Slight offset above rock to avoid z-fighting
+    snowUvs.push(0.5, 0.0);
+
+    for (let t = 1; t <= snowTiers; t++) {
+      const vProgress = t / heightTiers;
+      const tierY = height * (1 - Math.pow(vProgress, 1.25));
+      const tierBaseRadius = (width / 2) * Math.pow(vProgress, 0.9);
+
+      for (let s = 0; s < radialSegments; s++) {
+        const angle = (s / radialSegments) * Math.PI * 2;
+
+        const ridgeNoise =
+          Math.sin(angle * 3 + seed * 1.7) * 0.18 +
+          Math.cos(angle * 5 + seed * 3.1) * 0.12 +
+          Math.sin(angle * 8 + t * 2.3) * 0.08;
+
+        // Snow extends further down the valleys between ridges
+        const chuteExtension = Math.sin(angle * 4 + seed) > 0 ? 1.08 : 0.95;
+        const radX = tierBaseRadius * (1.0 + ridgeNoise) * chuteExtension + 0.08;
+        const radZ = tierBaseRadius * (0.85 + Math.cos(angle * 2 + seed) * 0.2) * chuteExtension + 0.08;
+        const cliffY = tierY + (Math.sin(angle * 4 + t * 3) * height * 0.04) + 0.05;
+
+        snowVertices.push(Math.cos(angle) * radX, Math.max(0, cliffY), Math.sin(angle) * radZ);
+        snowUvs.push(s / radialSegments, vProgress);
+      }
+    }
+
+    // Connect snow apex to tier 1
+    for (let s = 0; s < radialSegments; s++) {
+      const nextS = (s + 1) % radialSegments;
+      snowIndices.push(0, 1 + s, 1 + nextS);
+    }
+
+    // Connect snow tiers
+    for (let t = 1; t < snowTiers; t++) {
+      const currentTierStart = 1 + (t - 1) * radialSegments;
+      const nextTierStart = 1 + t * radialSegments;
+
+      for (let s = 0; s < radialSegments; s++) {
+        const nextS = (s + 1) % radialSegments;
+        const c1 = currentTierStart + s;
+        const c2 = currentTierStart + nextS;
+        const n1 = nextTierStart + s;
+        const n2 = nextTierStart + nextS;
+
+        snowIndices.push(c1, n1, c2);
+        snowIndices.push(c2, n1, n2);
+      }
+    }
+
+    const snowGeo = new THREE.BufferGeometry();
+    snowGeo.setAttribute('position', new THREE.Float32BufferAttribute(snowVertices, 3));
+    snowGeo.setAttribute('uv', new THREE.Float32BufferAttribute(snowUvs, 2));
+    snowGeo.setIndex(snowIndices);
+    snowGeo.computeVertexNormals();
+
+    const snowMesh = new THREE.Mesh(snowGeo, this.snowMaterial);
+    snowMesh.castShadow = true;
+    group.add(snowMesh);
+
+    return group;
+  }
+
+  // Layer 1 (Far): High-Fidelity Himalayan Alpine Mountain Range (Matching Reference Image)
+  private createMistyMountainSilhouettes(horizonZ: number): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'FAR_MOUNTAIN_SILHOUETTES';
+
+    // 1. LAYER 1: Colossal Himalayan Crest (Backdrop Range)
+    const farPeaks = [
+      { x: -220, w: 165, h: 122, snow: 0.52, seed: 1.2 },
+      { x: -145, w: 140, h: 105, snow: 0.48, seed: 2.5 },
+      { x: -72, w: 120, h: 88, snow: 0.45, seed: 3.8 },
+      { x: 0, w: 130, h: 72, snow: 0.40, seed: 4.1 }, // Saddle valley framing horizon sun
+      { x: 72, w: 120, h: 88, snow: 0.45, seed: 5.4 },
+      { x: 145, w: 140, h: 105, snow: 0.48, seed: 6.7 },
+      { x: 220, w: 165, h: 122, snow: 0.52, seed: 7.9 },
     ];
 
-    templePositions.forEach((pos) => {
-      const gopuram = this.createDravidianGopuram(pos.height, pos.scale);
-      gopuram.position.set(pos.x, 0, horizonZ);
-      group.add(gopuram);
+    farPeaks.forEach((p) => {
+      const peakGroup = this.createRuggedAlpinePeak(p.w, p.h, p.snow, p.seed);
+      peakGroup.position.set(p.x, 0, horizonZ);
+      group.add(peakGroup);
+    });
+
+    // Connecting mountain saddles/cols between adjacent peaks (seamless skyline with zero gaps)
+    const saddles = [
+      { x: -180, w: 90, h: 58, z: horizonZ + 5, seed: 2.1 },
+      { x: -108, w: 85, h: 52, z: horizonZ + 5, seed: 3.4 },
+      { x: -36, w: 80, h: 44, z: horizonZ + 5, seed: 4.7 },
+      { x: 36, w: 80, h: 44, z: horizonZ + 5, seed: 5.1 },
+      { x: 108, w: 85, h: 52, z: horizonZ + 5, seed: 6.3 },
+      { x: 180, w: 90, h: 58, z: horizonZ + 5, seed: 7.2 },
+    ];
+
+    saddles.forEach((s) => {
+      const saddleMesh = this.createRuggedAlpinePeak(s.w, s.h, 0.35, s.seed);
+      saddleMesh.position.set(s.x, 0, s.z);
+      group.add(saddleMesh);
+    });
+
+    // 2. LAYER 2: Mid-Distance Jagged Alpine Arêtes & Cirques
+    const midPeaks = [
+      { x: -185, w: 115, h: 72, snow: 0.45, seed: 8.3 },
+      { x: -110, w: 98, h: 60, snow: 0.40, seed: 9.1 },
+      { x: -42, w: 88, h: 48, snow: 0.35, seed: 10.4 },
+      { x: 42, w: 88, h: 48, snow: 0.35, seed: 11.2 },
+      { x: 110, w: 98, h: 60, snow: 0.40, seed: 12.6 },
+      { x: 185, w: 115, h: 72, snow: 0.45, seed: 13.9 },
+    ];
+
+    midPeaks.forEach((p) => {
+      const midGroup = this.createRuggedAlpinePeak(p.w, p.h, p.snow, p.seed);
+      midGroup.position.set(p.x, 0, horizonZ + 25);
+      group.add(midGroup);
+    });
+
+    // 3. LAYER 3: Volumetric Atmospheric Mountain Mist & Cloud Bands
+    const mistBands = [
+      { y: 14, z: horizonZ + 12, w: 380, h: 28, opacity: 0.42 },
+      { y: 26, z: horizonZ + 18, w: 350, h: 32, opacity: 0.32 },
+      { y: 38, z: horizonZ + 32, w: 320, h: 24, opacity: 0.25 },
+    ];
+
+    mistBands.forEach((mb) => {
+      const mistGeo = new THREE.PlaneGeometry(mb.w, mb.h);
+      const mistMat = new THREE.MeshBasicMaterial({
+        color: 0xc7d2fe,
+        transparent: true,
+        opacity: mb.opacity,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const mistMesh = new THREE.Mesh(mistGeo, mistMat);
+      mistMesh.position.set(0, mb.y, mb.z);
+      group.add(mistMesh);
     });
 
     return group;
   }
 
-  // Procedural multi-tiered Dravidian Gopuram pyramid silhouette
-  private createDravidianGopuram(totalHeight: number, scale: number): THREE.Group {
-    const temple = new THREE.Group();
-    const tiers = 6;
-    const tierHeight = (totalHeight * 0.75) / tiers;
-    let currentWidth = 26 * scale;
-    let currentY = 0;
+  // Layer 2 (Mid): Distant Tree Line with Atmospheric Haze
+  private createMidDistanceTreeLine(depthZ: number): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'MID_TREELINE_RIDGE';
 
-    // Stepped Pyramidal Talas (Levels)
-    for (let t = 0; t < tiers; t++) {
-      const w = currentWidth * (1.0 - (t / tiers) * 0.62);
-      const tierGeo = new THREE.BoxGeometry(w, tierHeight, 8 * scale);
-      const tierMesh = new THREE.Mesh(tierGeo, this.templeSilhouetteMat);
-      tierMesh.position.y = currentY + tierHeight / 2;
-      temple.add(tierMesh);
+    // Undulating tree line silhouette across the middle distance
+    const treeCount = 28;
+    for (let t = 0; t < treeCount; t++) {
+      const u = (t / (treeCount - 1)) - 0.5;
+      const tx = u * 240;
+      const th = 16 + Math.sin(t * 1.4) * 6 + ((t * 3.7) % 5);
+      const tw = 8 + (t % 3) * 2;
 
-      // Cornice ledge projection
-      const ledgeGeo = new THREE.BoxGeometry(w * 1.08, tierHeight * 0.22, 9 * scale);
-      const ledgeMesh = new THREE.Mesh(ledgeGeo, this.templeSilhouetteMat);
-      ledgeMesh.position.y = currentY + tierHeight;
-      temple.add(ledgeMesh);
-
-      currentY += tierHeight;
+      const treeGeo = new THREE.ConeGeometry(tw, th, 5);
+      const treeMesh = new THREE.Mesh(treeGeo, this.mountainSilhouetteMatMid);
+      treeMesh.position.set(tx, th / 2, depthZ + (t % 4) * 5);
+      group.add(treeMesh);
     }
 
-    // Barrel-Vaulted Shala Crown Roof (Gopuram Top)
-    const roofWidth = currentWidth * 0.42;
-    const roofHeight = totalHeight * 0.16;
-    const roofGeo = new THREE.CylinderGeometry(roofWidth * 0.5, roofWidth * 0.5, 7 * scale, 12, 1, false, 0, Math.PI);
-    roofGeo.rotateZ(Math.PI / 2);
-    roofGeo.rotateY(Math.PI / 2);
-    const roofMesh = new THREE.Mesh(roofGeo, this.templeSilhouetteMat);
-    roofMesh.position.y = currentY + roofHeight * 0.4;
-    temple.add(roofMesh);
+    // Atmospheric valley mist haze band
+    const hazeGeo = new THREE.PlaneGeometry(300, 24);
+    const hazeMesh = new THREE.Mesh(hazeGeo, this.mountainHazeMat);
+    hazeMesh.position.set(0, 10, depthZ + 8);
+    group.add(hazeMesh);
 
-    // Row of Golden Kalashas (Pinnacle Spires) atop the ridge
-    const kalashaCount = 5;
-    for (let k = 0; k < kalashaCount; k++) {
-      const u = (k / (kalashaCount - 1)) - 0.5;
-      const kx = u * (roofWidth * 0.75);
-
-      const kalashaGeo = new THREE.ConeGeometry(0.8 * scale, 3.2 * scale, 8);
-      const kalashaMat = new THREE.MeshBasicMaterial({ color: 0xfde047, depthWrite: false });
-      const kalasha = new THREE.Mesh(kalashaGeo, kalashaMat);
-      kalasha.position.set(kx, currentY + roofHeight + 1.2 * scale, 0);
-      temple.add(kalasha);
-    }
-
-    return temple;
+    return group;
   }
 
   // Alias for backward compatibility

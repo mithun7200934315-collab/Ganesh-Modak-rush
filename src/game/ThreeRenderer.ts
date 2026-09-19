@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ThreeModelBuilder } from './ThreeModelBuilder';
 import type { Player3D, Collectible3D, Obstacle3D, GameState, ObstacleType, CollectibleType } from '../types/game';
-import { ROAD_SEGMENT_LENGTH, VISIBLE_ROAD_SEGMENTS } from './constants';
+import { ROAD_SEGMENT_LENGTH, VISIBLE_ROAD_SEGMENTS, GAME_CONFIG } from './constants';
 
 export class ThreeRenderer {
   private canvas: HTMLCanvasElement;
@@ -18,11 +18,26 @@ export class ThreeRenderer {
   private playerAuraInner: THREE.Mesh | null = null;
   private playerAuraOuter: THREE.Mesh | null = null;
   private playerEars: THREE.Group[] = [];
+  private ganeshaGroup: THREE.Group | null = null;
+  private mooshikaGroup: THREE.Group | null = null;
+  private tassels: THREE.Group[] = [];
+  private hairGroup: THREE.Group | null = null;
+  private dustParticles: { mesh: THREE.Mesh; active: boolean; life: number; maxLife: number; vx: number; vy: number; vz: number }[] = [];
+  private dustTimer: number = 0;
 
   // Environment & Road
   private skyGroup: THREE.Group | null = null;
+  private farMountainGroup: THREE.Group | null = null;
+  private midTreeLineGroup: THREE.Group | null = null;
   private roadSegments: THREE.Group[] = [];
   private diyaFlames: THREE.Mesh[] = [];
+
+  // Ambient Falling Leaves (Task 1: Foreground / Ambience)
+  private leafGeo!: THREE.BufferGeometry;
+  private leafMat!: THREE.PointsMaterial;
+  private leafPoints!: THREE.Points;
+  private leafPositions!: Float32Array;
+  private leafCount: number = 45;
 
   // Object Pooling for Collectibles & Obstacles
   private modakPool: THREE.Group[] = [];
@@ -77,9 +92,9 @@ export class ThreeRenderer {
     this.canvas = canvas;
     this.modelBuilder = new ThreeModelBuilder();
 
-    // 1. Scene & Early Morning Dawn Fog
+    // 1. Scene & Mountain Atmosphere Fog (Task 1 & Task 3)
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0xfbcfe8, 0.0028);
+    this.scene.fog = new THREE.FogExp2(0xc7d2fe, GAME_CONFIG.FOREST_DENSITY.FOG_DENSITY);
 
     // 2. Third-Person Straight-Behind Follow Camera looking down 3-lane road
     const width = window.innerWidth;
@@ -101,7 +116,7 @@ export class ThreeRenderer {
     // Disable heavy shadow map pass (replaced by GPU-efficient soft contact shadow blob)
     this.renderer.shadowMap.enabled = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.28;
+    this.renderer.toneMappingExposure = 1.32;
 
     // 4. Setup Lighting, Sky, Road, Character, Particles & Object Pools
     this.setupLighting();
@@ -117,11 +132,11 @@ export class ThreeRenderer {
 
   private setupLighting() {
     // Warm Peach & Golden Dawn Ambient Light
-    this.ambientLight = new THREE.AmbientLight(0xffedd5, 1.1);
+    this.ambientLight = new THREE.AmbientLight(0xffedd5, 1.15);
     this.scene.add(this.ambientLight);
 
     // Early Morning Sun Directional Light (beaming from forward horizon toward camera)
-    this.dirLight = new THREE.DirectionalLight(0xfef08a, 1.6);
+    this.dirLight = new THREE.DirectionalLight(0xfef08a, 1.65);
     this.dirLight.position.set(0, 18, -45);
     this.dirLight.castShadow = false;
     this.scene.add(this.dirLight);
@@ -141,6 +156,8 @@ export class ThreeRenderer {
   private setupSky() {
     this.skyGroup = this.modelBuilder.createMorningDawnSky();
     this.godRaysGroup = this.skyGroup.getObjectByName('CREPUSCULAR_GOD_RAYS') as THREE.Group | null;
+    this.farMountainGroup = this.skyGroup.getObjectByName('FAR_MOUNTAIN_SILHOUETTES') as THREE.Group | null;
+    this.midTreeLineGroup = this.skyGroup.getObjectByName('MID_TREELINE_RIDGE') as THREE.Group | null;
     this.scene.add(this.skyGroup);
   }
 
@@ -194,6 +211,10 @@ export class ThreeRenderer {
     this.playerAuraInner = char.auraInner;
     this.playerAuraOuter = char.auraOuter;
     this.playerEars = char.ears;
+    this.ganeshaGroup = char.ganeshaGroup;
+    this.mooshikaGroup = char.mooshikaGroup;
+    this.tassels = char.tassels;
+    this.hairGroup = char.hairGroup;
     this.scene.add(this.playerRoot);
 
     // Soft grounded contact shadow under Mooshika and Lord Ganesha (0 extra draw passes)
@@ -212,6 +233,7 @@ export class ThreeRenderer {
   }
 
   private setupAmbientParticles() {
+    // 1. Ambient Stardust Sparkles
     this.particlePositions = new Float32Array(this.particleCount * 3);
     for (let i = 0; i < this.particleCount; i++) {
       this.particlePositions[i * 3] = (Math.random() - 0.5) * 32;     // X
@@ -232,6 +254,68 @@ export class ThreeRenderer {
 
     this.particlePoints = new THREE.Points(this.particleGeo, this.particleMat);
     this.scene.add(this.particlePoints);
+
+    // 2. Ambient Falling Leaves (Task 1: Foreground & Forest Ambience)
+    this.leafPositions = new Float32Array(this.leafCount * 3);
+    for (let i = 0; i < this.leafCount; i++) {
+      this.leafPositions[i * 3] = (Math.random() - 0.5) * 24;      // X
+      this.leafPositions[i * 3 + 1] = Math.random() * 8 + 1.0;    // Y
+      this.leafPositions[i * 3 + 2] = -Math.random() * 90;        // Z
+    }
+
+    this.leafGeo = new THREE.BufferGeometry();
+    this.leafGeo.setAttribute('position', new THREE.BufferAttribute(this.leafPositions, 3));
+
+    this.leafMat = new THREE.PointsMaterial({
+      color: 0xeab308, // Golden-amber autumn forest leaves
+      size: 0.45,
+      transparent: true,
+      opacity: 0.82,
+    });
+
+    this.leafPoints = new THREE.Points(this.leafGeo, this.leafMat);
+    this.scene.add(this.leafPoints);
+
+    // 3. Running Dust Puff Particles from Mushika's Paws (Task 1)
+    const dustGeo = new THREE.SphereGeometry(0.09, 6, 6);
+    const dustMat = new THREE.MeshBasicMaterial({
+      color: 0x8a725d,
+      transparent: true,
+      opacity: 0.65,
+      depthWrite: false,
+    });
+    for (let i = 0; i < 25; i++) {
+      const mesh = new THREE.Mesh(dustGeo, dustMat.clone());
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.dustParticles.push({
+        mesh,
+        active: false,
+        life: 0,
+        maxLife: 0.35,
+        vx: 0,
+        vy: 0,
+        vz: 0,
+      });
+    }
+  }
+
+  private spawnDustPuff(x: number, y: number, z: number) {
+    for (let i = 0; i < this.dustParticles.length; i++) {
+      const d = this.dustParticles[i];
+      if (!d.active) {
+        d.active = true;
+        d.life = 0.35;
+        d.maxLife = 0.35;
+        d.mesh.position.set(x, y, z);
+        d.mesh.scale.set(0.6, 0.6, 0.6);
+        d.mesh.visible = true;
+        d.vx = (Math.random() - 0.5) * 0.8;
+        d.vy = Math.random() * 0.8 + 0.3;
+        d.vz = Math.random() * 0.8 + 0.4;
+        break;
+      }
+    }
   }
 
   private setupBurstParticlePool() {
@@ -379,6 +463,33 @@ export class ThreeRenderer {
     }
   }
 
+  // Golden Light Burst on Ganesha Transformation (Task 2)
+  public spawnTransformationBurst(x: number, y: number, z: number) {
+    const count = 55;
+    let spawned = 0;
+
+    for (let i = 0; i < this.burstParticlePool.length && spawned < count; i++) {
+      const p = this.burstParticlePool[i];
+      if (!p.active) {
+        p.active = true;
+        p.life = 0.85;
+        p.mesh.position.set(x, y, z);
+        const scale = 1.75;
+        p.mesh.scale.set(scale, scale, scale);
+        p.mesh.visible = true;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const speed = Math.random() * 8 + 4;
+        p.vx = Math.sin(phi) * Math.cos(theta) * speed;
+        p.vy = Math.cos(phi) * speed + 2.5;
+        p.vz = Math.sin(phi) * Math.sin(theta) * speed;
+
+        spawned++;
+      }
+    }
+  }
+
   // =========================================================================
   // MAIN RENDER LOOP (60+ FPS)
   // =========================================================================
@@ -416,39 +527,148 @@ export class ThreeRenderer {
         this.characterRotator.rotation.y = player.facingAngle;
       }
 
-      // Mooshika Gallop Legs
+      // Mooshika Gallop Legs & Animations
       const runCycle = player.runCycle;
       if (this.playerLegs.length === 4) {
-        this.playerLegs[0].rotation.x = Math.sin(runCycle) * 0.6;
-        this.playerLegs[1].rotation.x = -Math.sin(runCycle) * 0.6;
-        this.playerLegs[2].rotation.x = -Math.sin(runCycle) * 0.6;
-        this.playerLegs[3].rotation.x = Math.sin(runCycle) * 0.6;
+        if (player.state === 'JUMPING' || !player.isGrounded) {
+          // Jumping pose: front legs tucked up, rear legs extended
+          this.playerLegs[0].rotation.x = -0.4;
+          this.playerLegs[1].rotation.x = -0.4;
+          this.playerLegs[2].rotation.x = 0.55;
+          this.playerLegs[3].rotation.x = 0.55;
+        } else {
+          // Quadruped running gallop
+          this.playerLegs[0].rotation.x = Math.sin(runCycle) * 0.75;
+          this.playerLegs[1].rotation.x = -Math.sin(runCycle) * 0.75;
+          this.playerLegs[2].rotation.x = -Math.sin(runCycle) * 0.75;
+          this.playerLegs[3].rotation.x = Math.sin(runCycle) * 0.75;
+        }
       }
 
-      // Mooshika Tail Sway
+      // Swishing Tail Sway
       if (this.playerTail) {
-        this.playerTail.rotation.y = Math.sin(runCycle * 0.8) * 0.35;
-        this.playerTail.rotation.z = Math.cos(runCycle * 0.8) * 0.2;
+        this.playerTail.rotation.y = Math.sin(runCycle * 0.85) * 0.35;
+        this.playerTail.rotation.z = Math.cos(runCycle * 0.85) * 0.2;
       }
 
-      // Lord Ganesha Ears Flapping
+      // Lord Ganesha Ears Flapping (gentle, majestic)
       if (this.playerEars.length === 2) {
-        const earFlap = Math.sin(runCycle * 0.5) * 0.12;
+        const earFlap = Math.sin(runCycle * 0.7) * 0.16;
         this.playerEars[0].rotation.y = -0.25 + earFlap;
         this.playerEars[1].rotation.y = 0.25 - earFlap;
       }
 
-      // Shimmering Pulsing Aura
+      // Soft Shimmering Golden Aura (Config toggle: GAME_CONFIG.PLAYER_CONFIG.SHOW_AURA)
+      const showAura = GAME_CONFIG.PLAYER_CONFIG.SHOW_AURA;
       if (this.playerAuraInner) {
-        const pulse = 1.0 + Math.sin(time * 6) * 0.08;
-        this.playerAuraInner.scale.set(pulse, pulse, 1);
+        this.playerAuraInner.visible = showAura;
+        if (showAura) {
+          const pulse = 1.0 + Math.sin(time * 5) * 0.06;
+          this.playerAuraInner.scale.set(pulse, pulse, 1);
+        }
       }
       if (this.playerAuraOuter) {
-        const pulseOuter = 1.0 + Math.cos(time * 5) * 0.12;
-        this.playerAuraOuter.scale.set(pulseOuter, pulseOuter, 1);
+        this.playerAuraOuter.visible = showAura;
+        if (showAura) {
+          const pulseOuter = 1.05 + Math.cos(time * 4) * 0.08;
+          this.playerAuraOuter.scale.set(pulseOuter, pulseOuter, 1);
+        }
       }
 
-      // Warm player light
+      // Permanent Character: Lord Ganesha Seated on Mushika
+      if (this.ganeshaGroup) {
+        this.ganeshaGroup.visible = true; // ALWAYS visible!
+        if (player.state === 'SLIDING') {
+          this.ganeshaGroup.position.y = 0.55;
+          this.ganeshaGroup.rotation.x = 0.35; // Duck low
+        } else if (player.state === 'JUMPING' || !player.isGrounded) {
+          this.ganeshaGroup.position.y = 0.88;
+          this.ganeshaGroup.rotation.x = 0.12; // Composed posture during leap
+        } else {
+          // Natural vertical bounce reacting with the mouse stride
+          const bounce = Math.abs(Math.sin(runCycle * 2)) * 0.06 * GAME_CONFIG.PLAYER_CONFIG.BOUNCE_INTENSITY;
+          this.ganeshaGroup.position.y = 0.88 + bounce * 0.7;
+          this.ganeshaGroup.rotation.x = Math.sin(runCycle * 2) * 0.035;
+        }
+      }
+
+      if (this.mooshikaGroup) {
+        this.mooshikaGroup.visible = true; // ALWAYS visible!
+        if (player.state === 'SLIDING') {
+          this.mooshikaGroup.position.y = 0.22;
+          this.mooshikaGroup.scale.set(1.15, 0.58, 1.15); // Crouch low
+          this.mooshikaGroup.rotation.x = 0.1;
+        } else if (player.state === 'JUMPING' || !player.isGrounded) {
+          this.mooshikaGroup.position.y = 0.4;
+          this.mooshikaGroup.scale.set(1, 1, 1);
+          this.mooshikaGroup.rotation.x = -0.22; // Pitch up in leap
+        } else {
+          const bounce = Math.abs(Math.sin(runCycle * 2)) * 0.06 * GAME_CONFIG.PLAYER_CONFIG.BOUNCE_INTENSITY;
+          this.mooshikaGroup.position.y = 0.4 + bounce;
+          this.mooshikaGroup.scale.set(1, 1, 1);
+          this.mooshikaGroup.rotation.x = Math.sin(runCycle * 2) * 0.025;
+        }
+      }
+
+      // Saddle Tassels Swaying Dynamically with Run & Bounce
+      for (let t = 0; t < this.tassels.length; t++) {
+        this.tassels[t].rotation.z = Math.sin(runCycle * 2 + t * 0.55) * 0.28 * GAME_CONFIG.PLAYER_CONFIG.SWAY_INTENSITY;
+        this.tassels[t].rotation.x = Math.cos(runCycle * 2 + t * 0.4) * 0.15 * GAME_CONFIG.PLAYER_CONFIG.SWAY_INTENSITY;
+      }
+
+      // Long Dark Flowing Hair Swaying
+      if (this.hairGroup) {
+        this.hairGroup.rotation.x = -0.15 + Math.sin(runCycle * 2) * 0.12 * GAME_CONFIG.PLAYER_CONFIG.SWAY_INTENSITY;
+        this.hairGroup.rotation.z = Math.cos(runCycle * 1.5) * 0.06 * GAME_CONFIG.PLAYER_CONFIG.SWAY_INTENSITY;
+      }
+
+      // Hurt / Stumble / Flash Effect
+      if (player.state === 'STUMBLE' || player.invulnerableTimer > 0) {
+        this.playerRoot.visible = Math.sin(time * 30) > 0;
+        if (this.characterRotator) {
+          this.characterRotator.position.x = Math.sin(time * 45) * 0.06;
+        }
+      } else {
+        this.playerRoot.visible = true;
+        if (this.characterRotator) {
+          this.characterRotator.position.x = 0;
+        }
+      }
+
+      // Running Dust Puffs Generation (from Mushika's paws on mountain trail)
+      if (GAME_CONFIG.PLAYER_CONFIG.DUST_EFFECTS && player.isGrounded && _state.mode === 'PLAYING') {
+        this.dustTimer += dt;
+        if (this.dustTimer >= 0.08) {
+          this.dustTimer = 0;
+          const pawSide = (Math.random() - 0.5) * 0.6;
+          this.spawnDustPuff(player.x + pawSide, 0.05, player.z + 0.4);
+        }
+      }
+
+      // Update Active Dust Particles
+      for (let i = 0; i < this.dustParticles.length; i++) {
+        const d = this.dustParticles[i];
+        if (d.active) {
+          d.life -= dt;
+          if (d.life <= 0) {
+            d.active = false;
+            d.mesh.visible = false;
+          } else {
+            d.mesh.position.x += d.vx * dt;
+            d.mesh.position.y += d.vy * dt;
+            d.mesh.position.z += d.vz * dt;
+            const progress = 1 - (d.life / d.maxLife);
+            const s = 0.6 + progress * 0.8;
+            d.mesh.scale.set(s, s, s);
+            (d.mesh.material as THREE.MeshBasicMaterial).opacity = (d.life / d.maxLife) * 0.55;
+          }
+        }
+      }
+
+      // Warm divine player light follows character
+      this.playerPointLight.color.setHex(0xfbbf24);
+      this.playerPointLight.intensity = 2.2;
+      this.playerPointLight.distance = 16;
       this.playerPointLight.position.set(player.x, player.y + 2.2, player.z - 0.5);
     }
 
@@ -469,9 +689,19 @@ export class ThreeRenderer {
     this.dirLight.target.position.set(player.x, player.y, player.z + 10);
     this.dirLight.target.updateMatrixWorld();
 
-    // Sky follows forward progress
+    // Sky follows forward progress with Parallax (Task 1)
     if (this.skyGroup) {
       this.skyGroup.position.set(0, 0, player.z);
+
+      // Layer 1 Far Mountain Silhouettes lateral parallax shift
+      if (this.farMountainGroup) {
+        this.farMountainGroup.position.x = player.x * GAME_CONFIG.PARALLAX.FAR_MOUNTAINS;
+      }
+
+      // Layer 2 Mid-Distance Tree Line lateral parallax shift
+      if (this.midTreeLineGroup) {
+        this.midTreeLineGroup.position.x = player.x * GAME_CONFIG.PARALLAX.MID_TREES;
+      }
 
       // Animate subtle shimmer & breath on crepuscular god rays (O(1) cached group lookup)
       if (this.godRaysGroup) {
@@ -492,6 +722,15 @@ export class ThreeRenderer {
       const segment = this.roadSegments[i];
       if (segment.position.z > player.z + ROAD_SEGMENT_LENGTH * 1.5) {
         segment.position.z -= VISIBLE_ROAD_SEGMENTS * ROAD_SEGMENT_LENGTH;
+      }
+
+      // Foliage Wind Sway Animation (Task 1: gentle sway on foliage)
+      for (let c = 0; c < segment.children.length; c++) {
+        const child = segment.children[c];
+        if (child.name === 'PINE_TREE' || child.name === 'MIXED_TREE') {
+          const sway = Math.sin(time * 2.2 + i * 1.4 + child.position.x * 0.4) * 0.035;
+          child.rotation.z = sway;
+        }
       }
     }
 
@@ -612,6 +851,21 @@ export class ThreeRenderer {
     }
     this.particleGeo.attributes.position.needsUpdate = true;
 
+    // 7b. Ambient Falling Forest Leaves (Task 1: Foreground / Ambience)
+    const leafPos = this.leafPositions;
+    for (let i = 0; i < this.leafCount; i++) {
+      leafPos[i * 3] += Math.sin(time * 2.0 + i) * dt * 1.2; // Gentle horizontal fluttering
+      leafPos[i * 3 + 1] -= dt * (1.8 + (i % 3) * 0.6);      // Drifting downwards
+      leafPos[i * 3 + 2] += dt * (player.y > 0 ? 3.0 : 4.5); // Passing towards camera for foreground depth
+
+      if (leafPos[i * 3 + 1] < 0 || leafPos[i * 3 + 2] > player.z + 12) {
+        leafPos[i * 3] = player.x + (Math.random() - 0.5) * 26;
+        leafPos[i * 3 + 1] = Math.random() * 8 + 2.0;
+        leafPos[i * 3 + 2] = player.z - 75 - Math.random() * 25;
+      }
+    }
+    this.leafGeo.attributes.position.needsUpdate = true;
+
     // 8. Update Pickup Explosion Burst Particles
     for (let i = 0; i < this.burstParticlePool.length; i++) {
       const p = this.burstParticlePool[i];
@@ -646,6 +900,8 @@ export class ThreeRenderer {
     if (this.playerShadowTexture) this.playerShadowTexture.dispose();
     this.particleGeo.dispose();
     this.particleMat.dispose();
+    if (this.leafGeo) this.leafGeo.dispose();
+    if (this.leafMat) this.leafMat.dispose();
     this.burstGeo.dispose();
     this.burstMatGold.dispose();
     this.burstMatSaffron.dispose();

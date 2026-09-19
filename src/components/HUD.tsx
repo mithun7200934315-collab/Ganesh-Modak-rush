@@ -149,7 +149,7 @@ export const HUD = React.memo<HUDProps>(({
           </button>
         </div>
 
-        {/* Speed Progression Badge (+5% every 15s) */}
+        {/* Speed Progression Badge */}
         <div
           style={{
             display: 'flex',
@@ -169,6 +169,7 @@ export const HUD = React.memo<HUDProps>(({
           <Zap size={14} color="#facc15" />
           <span>SPEED: {(state.speedMultiplier || 1.0).toFixed(2)}x (+6%/8s)</span>
         </div>
+
 
         {/* Speed Increase Paused Indicator */}
         {state.speedIncreasePauseTimer > 0 && (
