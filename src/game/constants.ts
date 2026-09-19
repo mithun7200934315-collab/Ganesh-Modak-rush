@@ -90,7 +90,7 @@ export const PALETTE = {
 export const GAME_CONFIG = {
   // TASK 1: Permanent Lord Ganesha on Mushika Configuration
   PLAYER_CONFIG: {
-    SHOW_AURA: true,            // Soft golden aura toggle around Lord Ganesha
+    SHOW_AURA: false,           // Absolutely no glowing aura behind Lord Ganesha
     DUST_EFFECTS: true,         // Running dust puffs from Mushika's paws
     BOUNCE_INTENSITY: 1.0,      // Body bounce intensity
     SWAY_INTENSITY: 1.0,        // Tassels, hair, and garland sway intensity
@@ -178,6 +178,104 @@ export const GAME_CONFIG = {
   },
 };
 
+// 500-Point Repeating Level Cycle: Level 1 -> Level 2 -> Level 3 -> Level 1 -> ...
+export const LEVEL_INTERVAL_POINTS = 500;
+export const LEVEL_CYCLE = [1, 2, 3] as const;
+
+export interface LevelDefinition {
+  level: number;
+  name: string;
+  subtitle: string;
+  badge: string;
+  emoji: string;
+  subtext: string;
+}
+
+export const LEVEL_DEFINITIONS: Record<number, LevelDefinition> = {
+  1: {
+    level: 1,
+    name: 'Mountain Forest Trail',
+    subtitle: 'Dawn Forest Trail of Lord Ganesha',
+    badge: '🌲 LEVEL 1',
+    emoji: '🌲',
+    subtext: 'Dawn Forest Trail of Lord Ganesha',
+  },
+  2: {
+    level: 2,
+    name: 'Minecart Railway',
+    subtitle: 'Subterranean Crystal Cavern',
+    badge: '🚂 LEVEL 2',
+    emoji: '🚂',
+    subtext: 'Riding into the Subterranean Minecart Railway!',
+  },
+  3: {
+    level: 3,
+    name: 'River Stream',
+    subtitle: 'Sacred Crystal River & Forest Shallows',
+    badge: '🌊 LEVEL 3',
+    emoji: '🌊',
+    subtext: 'Entering the Sacred River Stream & Forest Shallows!',
+  },
+};
+
+export const LEVEL_THEMES = [
+  {
+    themeIndex: 0,
+    name: 'Mountain Forest Trail',
+    subtitle: 'Dawn Forest Trail of Lord Ganesha',
+    emoji: '🌲',
+    subtext: 'Returning to the Dawn Mountain Forest Trail!',
+  },
+  {
+    themeIndex: 1,
+    name: 'Minecart Railway',
+    subtitle: 'Subterranean Crystal Cavern',
+    emoji: '🚂',
+    subtext: 'Riding into the Subterranean Minecart Railway!',
+  },
+  {
+    themeIndex: 2,
+    name: 'River Stream',
+    subtitle: 'Sacred Crystal River & Forest Shallows',
+    emoji: '🌊',
+    subtext: 'Entering the Sacred River Stream & Forest Shallows!',
+  },
+] as const;
+
+export function getLevelTheme(level: number) {
+  const themeIndex = (Math.max(1, level) - 1) % LEVEL_THEMES.length;
+  return LEVEL_THEMES[themeIndex];
+}
+
+export function getLevelDefinition(level: number): LevelDefinition {
+  const theme = getLevelTheme(level);
+  return {
+    level,
+    name: theme.name,
+    subtitle: theme.subtitle,
+    badge: `${theme.emoji} LEVEL ${level}`,
+    emoji: theme.emoji,
+    subtext: theme.subtext,
+  };
+}
+
+/**
+ * Calculates current level number incrementing step-by-step (1, 2, 3, 4, 5, ...):
+ * Score 0-499: Level 1
+ * Score 500-999: Level 2
+ * Score 1000-1499: Level 3
+ * Score 1500-1999: Level 4
+ * Score 2000-2499: Level 5
+ * ...
+ */
+export function getLevelFromScore(score: number): number {
+  return Math.floor(Math.max(0, score) / LEVEL_INTERVAL_POINTS) + 1;
+}
+
+export function getLevelIntervalIndex(score: number): number {
+  return Math.floor(Math.max(0, score) / LEVEL_INTERVAL_POINTS);
+}
+
 export interface LevelThreshold {
   level: number;
   minScore: number;
@@ -236,7 +334,7 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     decorColor: '#d97706',
     speed: 20,
     targetDistance: 10000,
-    obstacleTypes: ['STONE_PILLAR', 'WOODEN_CART'],
+    obstacleTypes: ['FESTIVE_BARRICADE'],
     pandalTheme: 'Subterranean Crystal Mine',
     blessingName: 'Patalavasi Vigneshwara Protection',
     blessingDesc: 'Lord Ganesha guides your minecart through subterranean depths with blazing divine light!',
@@ -251,7 +349,7 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
     decorColor: '#15803d',
     speed: 22,
     targetDistance: 15000,
-    obstacleTypes: ['RIVER_BOULDER', 'FALLEN_LOG', 'RIVER_BRANCHES'],
+    obstacleTypes: ['RIVER_BOULDER'],
     pandalTheme: 'Sacred Forest River',
     blessingName: 'Jalavasi Vigneshwara River Blessing',
     blessingDesc: 'Lord Ganesha clears all river currents and grants smooth passage across sacred waters!',

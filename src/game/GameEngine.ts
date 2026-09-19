@@ -12,7 +12,9 @@ import {
   MEGA_MODAK_BONUS_POINTS,
   MEGA_MODAK_SPEED_PAUSE_DURATION,
   MEGA_MODAK_ANIM_DURATION,
-  LEVEL_THRESHOLDS,
+  getLevelFromScore,
+  getLevelIntervalIndex,
+  getLevelDefinition,
 } from './constants';
 import type {
   GameState,
@@ -37,6 +39,7 @@ export class GameEngine {
 
   // Track spawn frequency for Mega Modak (distance or time based)
   private distanceSinceLastMegaModak: number = 0;
+  private lastLevelInterval: number = 0;
 
   constructor() {
     this.state = this.getInitialState();
@@ -111,6 +114,7 @@ export class GameEngine {
     this.obstacles = [];
     this.nextSpawnZ = -30;
     this.distanceSinceLastMegaModak = 0;
+    this.lastLevelInterval = 0;
 
     // Seed initial obstacles and collectibles ahead
     for (let i = 0; i < 4; i++) {
@@ -209,10 +213,13 @@ export class GameEngine {
     // Pick how many lanes have obstacles: 1 or at most 2 (never all 3, ensuring clear path)
     const numObstacles = Math.random() < 0.65 ? 1 : 2;
 
-    // Level-specific obstacle types: Level 3+ uses natural river stream obstacles
+    // Level-specific obstacle types (cycles through 3 themes: 0=Mountain, 1=Railway, 2=River):
+    const themeIndex = (this.state.level - 1) % 3;
     let obstacleTypes: ObstacleType[];
-    if (this.state.level >= 3) {
+    if (themeIndex === 2) {
       obstacleTypes = ['RIVER_BOULDER', 'FALLEN_LOG', 'RIVER_BRANCHES'];
+    } else if (themeIndex === 1) {
+      obstacleTypes = ['FESTIVE_BARRICADE'];
     } else {
       obstacleTypes = ['STONE_PILLAR', 'WOODEN_CART'];
     }
@@ -221,7 +228,7 @@ export class GameEngine {
     const availableObstacleLanes = shuffledLanes.filter((l) => l !== megaModakLane);
     const obstacleLanes = availableObstacleLanes.slice(0, numObstacles);
 
-    // Place ancient stone pillars, stationary wooden carts, or river boulders/fallen logs
+    // Place obstacles ahead
     for (const lane of obstacleLanes) {
       const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
       const x = LANES_X[lane + 1];
@@ -238,6 +245,10 @@ export class GameEngine {
         width = 1.4;
         height = 0.82;
         depth = 1.1;
+      } else if (type === 'FESTIVE_BARRICADE') {
+        width = 2.3;
+        height = 1.1;
+        depth = 0.8;
       } else if (type === 'RIVER_BOULDER') {
         width = 1.5;
         height = 1.4;
@@ -489,24 +500,18 @@ export class GameEngine {
   }
 
   private checkLevelProgression() {
-    // Check highest qualified level from modular LEVEL_THRESHOLDS
-    let targetLevel = 1;
-    let targetThreshold = LEVEL_THRESHOLDS[0];
-    for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-      if (this.state.score >= LEVEL_THRESHOLDS[i].minScore) {
-        targetLevel = LEVEL_THRESHOLDS[i].level;
-        targetThreshold = LEVEL_THRESHOLDS[i];
-        break;
-      }
-    }
+    const currentInterval = getLevelIntervalIndex(this.state.score);
+    if (currentInterval !== this.lastLevelInterval) {
+      this.lastLevelInterval = currentInterval;
+      const targetLevel = getLevelFromScore(this.state.score);
+      const def = getLevelDefinition(targetLevel);
 
-    if (targetLevel > this.state.level) {
       this.state.level = targetLevel;
-      const bannerEmoji = targetLevel === 2 ? '⚡' : targetLevel === 3 ? '🌊' : '⭐';
+      const bannerEmoji = def.emoji;
       this.state.levelTransitionBanner = {
         level: targetLevel,
         text: `${bannerEmoji} LEVEL ${targetLevel} REACHED! ${bannerEmoji}`,
-        subtext: targetThreshold.name.toUpperCase(),
+        subtext: def.name.toUpperCase(),
         timer: 3.5,
         duration: 3.5,
       };

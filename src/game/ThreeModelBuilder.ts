@@ -6,8 +6,8 @@ export interface PlayerCharacterMeshes {
   characterRotator: THREE.Group;
   legs: THREE.Mesh[];
   tail: THREE.Group;
-  auraInner: THREE.Mesh;
-  auraOuter: THREE.Mesh;
+  auraInner?: THREE.Mesh;
+  auraOuter?: THREE.Mesh;
   ears: THREE.Group[];
   mooshikaGroup: THREE.Group;
   ganeshaGroup: THREE.Group;
@@ -15,6 +15,7 @@ export interface PlayerCharacterMeshes {
   hairGroup: THREE.Group;
   minecartGroup: THREE.Group;
   minecartWheels: THREE.Mesh[];
+  boatGroup?: THREE.Group;
 }
 
 export class ThreeModelBuilder {
@@ -43,10 +44,11 @@ export class ThreeModelBuilder {
   private carvedPillarMaterial: THREE.MeshStandardMaterial;
   private cartWoodMaterial: THREE.MeshStandardMaterial;
   private marigoldOrangeMaterial: THREE.MeshStandardMaterial;
+  private stoneRoadMaterial: THREE.MeshStandardMaterial;
+  private mandalaDecalMaterial: THREE.MeshStandardMaterial;
   private marigoldYellowMaterial: THREE.MeshStandardMaterial;
 
   // Mountain Trail & Dense Forest Materials (Task 1 & Task 3)
-  private mountainTrailMaterial: THREE.MeshStandardMaterial;
   private mountainRockMaterial: THREE.MeshStandardMaterial;
   private pineNeedleMaterial: THREE.MeshStandardMaterial;
   private pineNeedleLightMaterial: THREE.MeshStandardMaterial;
@@ -71,6 +73,8 @@ export class ThreeModelBuilder {
   private torchFlameMat: THREE.MeshBasicMaterial;
   private torchFlameCoreMat: THREE.MeshBasicMaterial;
   private torchLightPoolMat: THREE.MeshBasicMaterial;
+  private railwayBarricadeStripeMat: THREE.MeshStandardMaterial;
+  private railwayBarricadeSignMat: THREE.MeshStandardMaterial;
 
   // Level 3: Sacred River Stream Materials & Textures
   public waterTexture: THREE.CanvasTexture | null = null;
@@ -121,8 +125,6 @@ export class ThreeModelBuilder {
   private megaModakBeaconGeo: THREE.BufferGeometry;
 
   // Diya Geometries
-  private diyaPedestalGeo: THREE.BufferGeometry;
-  private diyaBowlGeo: THREE.BufferGeometry;
   private diyaFlameGeo: THREE.BufferGeometry;
   private diyaFlameCoreGeo: THREE.BufferGeometry;
   private diyaLightPoolGeo: THREE.BufferGeometry;
@@ -144,10 +146,6 @@ export class ThreeModelBuilder {
   private cartHubGeo: THREE.BufferGeometry;
   private cartRoofGeo: THREE.BufferGeometry;
   private cartPotGeo: THREE.BufferGeometry;
-
-  private barricadePostGeo: THREE.BufferGeometry;
-  private barricadeBeamGeo: THREE.BufferGeometry;
-  private barricadeFinialGeo: THREE.BufferGeometry;
 
   // Road & Mountain Trail Geometries
   private roadPlaneGeo: THREE.BufferGeometry;
@@ -184,6 +182,10 @@ export class ThreeModelBuilder {
   private static cachedRiverbedTexture: THREE.CanvasTexture | null = null;
   private static cachedMossyRockTexture: THREE.CanvasTexture | null = null;
   private static cachedFallenLogTexture: THREE.CanvasTexture | null = null;
+  private static cachedBarricadeStripeTexture: THREE.CanvasTexture | null = null;
+  private static cachedBarricadeSignTexture: THREE.CanvasTexture | null = null;
+  private static cachedDivineEyeLeftTexture: THREE.CanvasTexture | null = null;
+  private static cachedDivineEyeRightTexture: THREE.CanvasTexture | null = null;
 
   constructor() {
     this.initStaticTextures();
@@ -443,11 +445,20 @@ export class ThreeModelBuilder {
       depthWrite: false,
     });
 
-    // Mountain Trail & Dense Forest Materials
-    this.mountainTrailMaterial = new THREE.MeshStandardMaterial({
-      map: ThreeModelBuilder.cachedMountainTrailTexture,
-      roughness: 0.88,
-      metalness: 0.06,
+
+    // Grey Stone Road & Carved Mandala Relief Materials
+    this.stoneRoadMaterial = new THREE.MeshStandardMaterial({
+      map: ThreeModelBuilder.cachedStoneRoadTexture,
+      roughness: 0.82,
+      metalness: 0.12,
+    });
+
+    this.mandalaDecalMaterial = new THREE.MeshStandardMaterial({
+      map: ThreeModelBuilder.cachedMandalaTexture,
+      transparent: true,
+      roughness: 0.80,
+      metalness: 0.15,
+      depthWrite: false,
     });
 
     this.mountainRockMaterial = new THREE.MeshStandardMaterial({
@@ -518,8 +529,6 @@ export class ThreeModelBuilder {
     this.megaModakBeaconGeo = new THREE.CylinderGeometry(0.55, 0.95, 10.0, 16, 1, true);
 
     // 3. Oil Lamp (Diya)
-    this.diyaPedestalGeo = new THREE.CylinderGeometry(0.18, 0.24, 0.65, 10);
-    this.diyaBowlGeo = new THREE.CylinderGeometry(0.24, 0.14, 0.16, 12);
     this.diyaFlameGeo = new THREE.ConeGeometry(0.09, 0.26, 8);
     this.diyaFlameCoreGeo = new THREE.ConeGeometry(0.04, 0.16, 8);
     this.diyaLightPoolGeo = new THREE.PlaneGeometry(2.4, 2.4);
@@ -539,10 +548,6 @@ export class ThreeModelBuilder {
     this.cartRoofGeo.rotateZ(Math.PI / 2);
     this.cartRoofGeo.rotateY(Math.PI / 2);
     this.cartPotGeo = new THREE.SphereGeometry(0.18, 10, 10);
-
-    this.barricadePostGeo = new THREE.CylinderGeometry(0.13, 0.15, 1.6, 10);
-    this.barricadeFinialGeo = new THREE.SphereGeometry(0.15, 8, 8);
-    this.barricadeBeamGeo = new THREE.BoxGeometry(2.2, 0.16, 0.1);
 
     // 5. Road & Mandala Relief Decals
     this.roadPlaneGeo = new THREE.PlaneGeometry(8.6, ROAD_SEGMENT_LENGTH);
@@ -637,9 +642,22 @@ export class ThreeModelBuilder {
     this.crystalEmeraldMaterial = new THREE.MeshStandardMaterial({
       color: new THREE.Color(GAME_CONFIG.MINECART.crystalEmerald),
       roughness: 0.15,
-      metalness: 0.65,
-      emissive: new THREE.Color('#059669'),
-      emissiveIntensity: 0.65,
+      metalness: 0.9,
+      emissive: new THREE.Color(GAME_CONFIG.MINECART.crystalEmerald),
+      emissiveIntensity: 0.8,
+    });
+
+    // Railway Warning Barricade Materials (Level 2 Primary Obstacle)
+    this.railwayBarricadeStripeMat = new THREE.MeshStandardMaterial({
+      map: ThreeModelBuilder.cachedBarricadeStripeTexture,
+      roughness: 0.55,
+      metalness: 0.15,
+    });
+
+    this.railwayBarricadeSignMat = new THREE.MeshStandardMaterial({
+      map: ThreeModelBuilder.cachedBarricadeSignTexture,
+      roughness: 0.45,
+      metalness: 0.2,
     });
 
     this.torchFlameMat = new THREE.MeshBasicMaterial({
@@ -837,30 +855,19 @@ export class ThreeModelBuilder {
       canvas.height = 1024;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        // Vertical Dawn Sky Gradient: Deep Blue-Purple Zenith -> Warm Amber -> Glowing Peach Horizon
+        // Vertical Dawn Sky Gradient: Deep Twilight Indigo -> Vibrant Rose -> Smooth Peach Horizon
         const bgGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-        bgGrad.addColorStop(0.0, '#312e81'); // Deep mountain indigo
-        bgGrad.addColorStop(0.25, '#6366f1'); // Mountain atmospheric haze
-        bgGrad.addColorStop(0.55, '#f472b6'); // Soft dawn pink
-        bgGrad.addColorStop(0.8, '#fda4af');  // Warm rose peach
-        bgGrad.addColorStop(1.0, '#fed7aa');  // Glowing peach horizon mist
+        bgGrad.addColorStop(0.0, '#1e1b4b'); // Deep twilight indigo
+        bgGrad.addColorStop(0.2, '#3730a3'); // Mountain atmospheric haze
+        bgGrad.addColorStop(0.42, '#ec4899'); // Vibrant morning rose
+        bgGrad.addColorStop(0.65, '#f472b6'); // Soft dawn pink
+        bgGrad.addColorStop(0.85, '#fb923c'); // Warm morning peach
+        bgGrad.addColorStop(1.0, '#fed7aa');  // Smooth golden peach horizon
         ctx.fillStyle = bgGrad;
         ctx.fillRect(0, 0, 1024, 1024);
 
-        // Radiant Golden Morning Sun Glow centered on forward horizon
-        ctx.globalCompositeOperation = 'screen';
-        const sunGlow = ctx.createRadialGradient(512, 880, 20, 512, 880, 550);
-        sunGlow.addColorStop(0.0, 'rgba(255, 251, 235, 0.95)'); // White-hot core
-        sunGlow.addColorStop(0.25, 'rgba(254, 224, 71, 0.75)'); // Radiant gold
-        sunGlow.addColorStop(0.6, 'rgba(249, 115, 22, 0.45)');  // Orange warm halo
-        sunGlow.addColorStop(1.0, 'rgba(244, 114, 182, 0.0)');  // Blending into pink
-        ctx.fillStyle = sunGlow;
-        ctx.beginPath();
-        ctx.arc(512, 880, 550, 0, Math.PI * 2);
-        ctx.fill();
-
         // Soft wispy morning clouds
-        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalCompositeOperation = 'screen';
         const drawCloud = (cx: number, cy: number, w: number, h: number, alpha: number) => {
           const grad = ctx.createRadialGradient(cx, cy, h * 0.2, cx, cy, w);
           grad.addColorStop(0, `rgba(254, 240, 138, ${alpha})`);
@@ -1566,7 +1573,400 @@ export class ThreeModelBuilder {
       ThreeModelBuilder.cachedFallenLogTexture = new THREE.CanvasTexture(canvas);
       ThreeModelBuilder.cachedFallenLogTexture.wrapS = THREE.RepeatWrapping;
       ThreeModelBuilder.cachedFallenLogTexture.wrapT = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedFallenLogTexture.repeat.set(3, 1);
     }
+
+    // 17. Railway Warning Barricade Red/White Diagonal Hazard Stripe Texture
+    if (!ThreeModelBuilder.cachedBarricadeStripeTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Base red background
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(0, 0, 512, 256);
+
+        // Bold white diagonal hazard stripes (45 degrees)
+        ctx.fillStyle = '#f8fafc';
+        const stripeWidth = 64;
+        for (let x = -256; x < 768; x += stripeWidth * 2) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + stripeWidth, 0);
+          ctx.lineTo(x + stripeWidth + 256, 256);
+          ctx.lineTo(x + 256, 256);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Horizontal weathered wood grain striations & scuffs
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        for (let y = 0; y < 256; y += 4) {
+          if (Math.random() > 0.4) {
+            ctx.fillRect(0, y, 512, 1 + Math.random() * 2);
+          }
+        }
+
+        // Top and bottom weathered grunge borders
+        const edgeGrad = ctx.createLinearGradient(0, 0, 0, 256);
+        edgeGrad.addColorStop(0, 'rgba(20, 10, 5, 0.45)');
+        edgeGrad.addColorStop(0.12, 'rgba(0, 0, 0, 0)');
+        edgeGrad.addColorStop(0.88, 'rgba(0, 0, 0, 0)');
+        edgeGrad.addColorStop(1, 'rgba(20, 10, 5, 0.55)');
+        ctx.fillStyle = edgeGrad;
+        ctx.fillRect(0, 0, 512, 256);
+
+        // Iron bolt holes at ends
+        [24, 488].forEach((bx) => {
+          [64, 192].forEach((by) => {
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(bx, by, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#475569';
+            ctx.beginPath();
+            ctx.arc(bx - 1, by - 1, 4, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        });
+      }
+      ThreeModelBuilder.cachedBarricadeStripeTexture = new THREE.CanvasTexture(canvas);
+      ThreeModelBuilder.cachedBarricadeStripeTexture.wrapS = THREE.RepeatWrapping;
+      ThreeModelBuilder.cachedBarricadeStripeTexture.wrapT = THREE.ClampToEdgeWrapping;
+      ThreeModelBuilder.cachedBarricadeStripeTexture.repeat.set(2, 1);
+    }
+
+    // 18. Railway Warning Sign Texture (STOP / Hazard Cross)
+    if (!ThreeModelBuilder.cachedBarricadeSignTexture) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Warning yellow background
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Heavy black border
+        ctx.strokeStyle = '#09090b';
+        ctx.lineWidth = 14;
+        ctx.strokeRect(10, 10, 236, 236);
+
+        // Black warning inner border
+        ctx.strokeStyle = '#09090b';
+        ctx.lineWidth = 6;
+        ctx.strokeRect(20, 20, 216, 216);
+
+        // Bold black text: STOP
+        ctx.fillStyle = '#09090b';
+        ctx.font = '900 48px Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('STOP', 128, 95);
+
+        // Railway cross symbol beneath
+        ctx.font = '900 38px Arial, sans-serif';
+        ctx.fillText('RAIL', 128, 155);
+
+        // Warning bar
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(40, 190, 176, 16);
+      }
+      ThreeModelBuilder.cachedBarricadeSignTexture = new THREE.CanvasTexture(canvas);
+    }
+
+    // 17 & 18. Divine Ganesha Almond Eyes (Left & Right with Deep Warm Brown Iris & Radial Patterns)
+    this.initDivineEyeTextures();
+  }
+
+  private initDivineEyeTextures() {
+    if (ThreeModelBuilder.cachedDivineEyeLeftTexture && ThreeModelBuilder.cachedDivineEyeRightTexture) return;
+
+    // Build two 1024x1024 textures: one for Left Eye, one for Right Eye
+    [-1, 1].forEach((side) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 1024;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Transparent background
+      ctx.clearRect(0, 0, 1024, 1024);
+
+      ctx.save();
+      // For side = -1 (character right eye, screen left), inner corner faces trunk (right), outer wing faces temple (left)
+      if (side === -1) {
+        ctx.translate(1024, 0);
+        ctx.scale(-1, 1);
+      }
+
+      // --- 1. DEFINING THE ALMOND (LOTUS PETAL) CONTOUR ---
+      const almondPath = () => {
+        ctx.beginPath();
+        ctx.moveTo(148, 512); // Inner canthus
+        // Upper lid arch: graceful high curve peaking around (480, 210)
+        ctx.bezierCurveTo(310, 230, 630, 190, 890, 460);
+        // Outer wing flick
+        ctx.quadraticCurveTo(945, 435, 995, 385);
+        ctx.quadraticCurveTo(925, 485, 880, 480);
+        // Lower lid arch: gentle shallow curve sweeping through (520, 770)
+        ctx.bezierCurveTo(660, 770, 330, 750, 148, 512);
+        ctx.closePath();
+      };
+
+      // --- 2. SCLERA (ALMOND EYEBALL WHITE) ---
+      ctx.save();
+      almondPath();
+      ctx.clip();
+
+      // Soft ivory-pearl gradient with warm corner shading
+      const scleraGrad = ctx.createRadialGradient(500, 500, 40, 500, 500, 460);
+      scleraGrad.addColorStop(0.0, '#fffefb');
+      scleraGrad.addColorStop(0.55, '#f8f4ec');
+      scleraGrad.addColorStop(0.85, '#eee5d6');
+      scleraGrad.addColorStop(1.0, '#e0d3c0');
+      ctx.fillStyle = scleraGrad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Inner canthus warm rose-amber depth (caruncle)
+      const canthusGrad = ctx.createRadialGradient(158, 512, 5, 158, 512, 110);
+      canthusGrad.addColorStop(0.0, 'rgba(217, 119, 6, 0.35)');
+      canthusGrad.addColorStop(0.6, 'rgba(180, 83, 9, 0.15)');
+      canthusGrad.addColorStop(1.0, 'rgba(180, 83, 9, 0.0)');
+      ctx.fillStyle = canthusGrad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // Upper lid shadow cast onto sclera
+      const shadowGrad = ctx.createLinearGradient(500, 200, 500, 420);
+      shadowGrad.addColorStop(0.0, 'rgba(30, 15, 5, 0.42)');
+      shadowGrad.addColorStop(1.0, 'rgba(30, 15, 5, 0.0)');
+      ctx.fillStyle = shadowGrad;
+      ctx.fillRect(0, 0, 1024, 1024);
+
+      // --- 3. DEEP WARM BROWN IRIS WITH INTRICATE NATURAL RADIAL PATTERNS ---
+      const cx = 500;
+      const cy = 500;
+      const irisRadius = 215;
+      const pupilRadius = 78;
+
+      // Outer Limbal Ring & Base Warm Brown Radial Gradient
+      const irisBaseGrad = ctx.createRadialGradient(cx, cy, pupilRadius * 0.8, cx, cy, irisRadius);
+      irisBaseGrad.addColorStop(0.00, '#1c0d03'); // Dark margin at pupil
+      irisBaseGrad.addColorStop(0.25, '#3b1504'); // Deep warm chocolate
+      irisBaseGrad.addColorStop(0.48, '#582106'); // Rich chestnut brown
+      irisBaseGrad.addColorStop(0.68, '#783208'); // Warm sienna brown
+      irisBaseGrad.addColorStop(0.85, '#943d09'); // Golden-amber brown
+      irisBaseGrad.addColorStop(0.94, '#4a1903'); // Darkening near limbus
+      irisBaseGrad.addColorStop(0.98, '#180701'); // Limbal ring
+      irisBaseGrad.addColorStop(1.00, 'rgba(15, 5, 1, 0.95)'); // Outer edge
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, irisRadius, 0, Math.PI * 2);
+      ctx.fillStyle = irisBaseGrad;
+      ctx.fill();
+
+      // INTRICATE NATURAL RADIAL PATTERNS (380+ Fine Organic Fibers & Fibrils)
+      const numFibers = 380;
+      for (let f = 0; f < numFibers; f++) {
+        const angle = (f / numFibers) * Math.PI * 2;
+        const seed = f * 13.37;
+        const wobble1 = Math.sin(seed * 0.7) * 0.035;
+        const wobble2 = Math.cos(seed * 1.3) * 0.025;
+
+        // Radii variations
+        const rStart = pupilRadius + Math.sin(f * 0.5) * 4;
+        const rEnd = irisRadius - 4 + Math.cos(f * 0.3) * 5;
+        const rMid = (rStart + rEnd) * 0.5;
+
+        const x1 = cx + Math.cos(angle) * rStart;
+        const y1 = cy + Math.sin(angle) * rStart;
+        const xMid = cx + Math.cos(angle + wobble1 + wobble2) * rMid;
+        const yMid = cy + Math.sin(angle + wobble1 + wobble2) * rMid;
+        const x2 = cx + Math.cos(angle + wobble1 * 0.5) * rEnd;
+        const y2 = cy + Math.sin(angle + wobble1 * 0.5) * rEnd;
+
+        // Rich color palette: Deep amber, warm sienna, golden honey, rich dark chocolate
+        const paletteChoice = f % 5;
+        let strokeColor: string;
+        const alpha = 0.22 + (Math.sin(f * 0.8) * 0.5 + 0.5) * 0.45;
+
+        if (paletteChoice === 0) strokeColor = `rgba(180, 83, 9, ${alpha})`;
+        else if (paletteChoice === 1) strokeColor = `rgba(146, 64, 14, ${alpha})`;
+        else if (paletteChoice === 2) strokeColor = `rgba(217, 119, 6, ${alpha})`;
+        else if (paletteChoice === 3) strokeColor = `rgba(74, 25, 4, ${alpha})`;
+        else strokeColor = `rgba(245, 158, 11, ${alpha * 0.85})`;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.quadraticCurveTo(xMid, yMid, x2, y2);
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.0 + (f % 3) * 0.9;
+        ctx.stroke();
+      }
+
+      // Collarette Ring (Undulating Zigzag Corona at r = 130 to 148)
+      ctx.beginPath();
+      const collarettePoints = 72;
+      for (let c = 0; c <= collarettePoints; c++) {
+        const cAngle = (c / collarettePoints) * Math.PI * 2;
+        const cR = 138 + Math.sin(c * 1.8) * 9 + Math.cos(c * 3.4) * 5;
+        const px = cx + Math.cos(cAngle) * cR;
+        const py = cy + Math.sin(cAngle) * cR;
+        if (c === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.48)';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      // Inner Pupillary Zone (r = 78 to 125): Fine Golden-Brown Spokes & Micro-Granules
+      for (let s = 0; s < 120; s++) {
+        const sAngle = (s / 120) * Math.PI * 2;
+        const sR1 = pupilRadius + 2;
+        const sR2 = 124 + Math.sin(s * 0.9) * 6;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(sAngle) * sR1, cy + Math.sin(sAngle) * sR1);
+        ctx.lineTo(cx + Math.cos(sAngle) * sR2, cy + Math.sin(sAngle) * sR2);
+        ctx.strokeStyle = s % 2 === 0 ? 'rgba(245, 158, 11, 0.52)' : 'rgba(120, 53, 15, 0.65)';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+
+      // Golden shimmer granules
+      for (let g = 0; g < 90; g++) {
+        const gAngle = Math.random() * Math.PI * 2;
+        const gR = pupilRadius + 10 + Math.random() * 95;
+        const gx = cx + Math.cos(gAngle) * gR;
+        const gy = cy + Math.sin(gAngle) * gR;
+        ctx.fillStyle = Math.random() > 0.4 ? 'rgba(253, 224, 71, 0.65)' : 'rgba(245, 158, 11, 0.55)';
+        ctx.beginPath();
+        ctx.arc(gx, gy, 1.2 + Math.random() * 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Contraction Furrows (Concentric Delicate Circular Arcs)
+      [158, 175, 192].forEach((fr, idx) => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, fr, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(55, 20, 5, ${0.28 - idx * 0.05})`;
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([8, 14]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      // --- 4. DISTINCT DEEP OBSIDIAN PUPIL ---
+      ctx.beginPath();
+      ctx.arc(cx, cy, pupilRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#050302';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(40, 15, 3, 0.8)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // --- 5. GLOSSY SPECULAR REFLECTIONS & DIVINE CATCHLIGHTS ---
+      // Primary Brilliant Catchlight at top-right
+      ctx.save();
+      ctx.translate(450, 440);
+      ctx.rotate(-0.4);
+      const catchGlow = ctx.createRadialGradient(0, 0, 4, 0, 0, 36);
+      catchGlow.addColorStop(0.0, 'rgba(255, 255, 255, 0.95)');
+      catchGlow.addColorStop(0.45, 'rgba(255, 255, 255, 0.65)');
+      catchGlow.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
+      ctx.fillStyle = catchGlow;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 36, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 18, 10, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Secondary Soft Ambient Catchlight at lower-left
+      ctx.beginPath();
+      ctx.arc(545, 545, 13, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.42)';
+      ctx.fill();
+
+      // Delicate upper corneal crescent sheen
+      ctx.beginPath();
+      ctx.arc(cx, cy, irisRadius * 0.82, -2.4, -0.7);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      ctx.restore(); // Restore clip
+
+      // --- 6. TRADITIONAL KOHL EYELINER, WING & FINE EYELASHES ---
+      // Upper Eyeliner Rim (Bold Lotus-Petal Curve with Wing)
+      ctx.beginPath();
+      ctx.moveTo(148, 512);
+      ctx.bezierCurveTo(310, 230, 630, 190, 890, 460);
+      ctx.quadraticCurveTo(945, 435, 995, 385);
+      ctx.quadraticCurveTo(925, 485, 880, 480);
+      ctx.strokeStyle = '#0a080c';
+      ctx.lineWidth = 26;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+
+      // Golden shimmer accent along upper kohl contour
+      ctx.beginPath();
+      ctx.moveTo(220, 440);
+      ctx.bezierCurveTo(330, 245, 620, 210, 860, 445);
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.55)';
+      ctx.lineWidth = 3.5;
+      ctx.stroke();
+
+      // Lower Eyeliner Rim
+      ctx.beginPath();
+      ctx.moveTo(880, 480);
+      ctx.bezierCurveTo(660, 770, 330, 750, 148, 512);
+      ctx.strokeStyle = '#151219';
+      ctx.lineWidth = 15;
+      ctx.stroke();
+
+      // 28 Individual Long Fine Eyelashes along the upper lid
+      for (let l = 0; l < 28; l++) {
+        const t = l / 27;
+        const u = 1 - t;
+        const lx = u * u * u * 180 + 3 * u * u * t * 310 + 3 * u * t * t * 630 + t * t * t * 880;
+        const ly = u * u * u * 480 + 3 * u * u * t * 240 + 3 * u * t * t * 200 + t * t * t * 460;
+
+        const lashLen = 35 + Math.sin(t * Math.PI) * 45;
+        const lashAngle = -Math.PI / 2 + (t - 0.5) * 0.9;
+        const endX = lx + Math.cos(lashAngle) * lashLen;
+        const endY = ly + Math.sin(lashAngle) * lashLen;
+        const midX = (lx + endX) * 0.5 + (t - 0.5) * 15;
+        const midY = (ly + endY) * 0.5 - 10;
+
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.quadraticCurveTo(midX, midY, endX, endY);
+        ctx.strokeStyle = '#08060a';
+        ctx.lineWidth = 2.4 - t * 0.8;
+        ctx.stroke();
+      }
+
+      // Sacred Vermilion / Kumkum Tilak Accent at Inner Corner
+      ctx.beginPath();
+      ctx.arc(142, 512, 6, 0, Math.PI * 2);
+      ctx.fillStyle = '#dc2626';
+      ctx.fill();
+
+      ctx.restore();
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.needsUpdate = true;
+      if (side === 1) {
+        ThreeModelBuilder.cachedDivineEyeRightTexture = tex;
+      } else {
+        ThreeModelBuilder.cachedDivineEyeLeftTexture = tex;
+      }
+    });
   }
 
   // =========================================================================
@@ -1580,30 +1980,35 @@ export class ThreeModelBuilder {
     const cartHeight = 0.68;
     const cartLength = 1.76;
 
-    // Wooden plank main body
+    // Steel rail top is at y = 0.12.
+    // Flanged wheel tread radius is 0.22.
+    // Axle Y must be 0.12 + 0.22 = 0.34 for wheel tread to contact rail top perfectly!
+    const wheelAxleY = 0.34;
+
+    // Wooden plank main body (sits on chassis, spans y = 0.38 to 1.06)
     const bodyGeo = new THREE.BoxGeometry(cartWidth, cartHeight, cartLength);
     const bodyMesh = new THREE.Mesh(bodyGeo, this.minecartWoodMaterial);
-    bodyMesh.position.set(0, 0.44, 0);
+    bodyMesh.position.set(0, 0.72, 0);
     bodyMesh.castShadow = true;
     group.add(bodyMesh);
 
-    // Inner hollow rim / cavity illusion (dark interior floor)
+    // Inner hollow rim / cavity floor (dark interior floor)
     const interiorFloorGeo = new THREE.PlaneGeometry(cartWidth - 0.14, cartLength - 0.14);
     interiorFloorGeo.rotateX(-Math.PI / 2);
     const interiorFloor = new THREE.Mesh(interiorFloorGeo, new THREE.MeshBasicMaterial({ color: 0x140e0a }));
-    interiorFloor.position.set(0, 0.52, 0);
+    interiorFloor.position.set(0, 0.44, 0);
     group.add(interiorFloor);
 
     // Top iron rim
     const topRimGeo = new THREE.BoxGeometry(cartWidth + 0.06, 0.08, cartLength + 0.06);
     const topRim = new THREE.Mesh(topRimGeo, this.minecartIronMaterial);
-    topRim.position.set(0, 0.78, 0);
+    topRim.position.set(0, 1.06, 0);
     group.add(topRim);
 
-    // Bottom chassis iron frame
+    // Bottom chassis iron frame (sits directly above axles)
     const bottomFrameGeo = new THREE.BoxGeometry(cartWidth + 0.04, 0.09, cartLength + 0.04);
     const bottomFrame = new THREE.Mesh(bottomFrameGeo, this.minecartIronMaterial);
-    bottomFrame.position.set(0, 0.14, 0);
+    bottomFrame.position.set(0, 0.38, 0);
     group.add(bottomFrame);
 
     // 4 Corner Iron Angles with Rivets
@@ -1616,13 +2021,13 @@ export class ThreeModelBuilder {
     cornerOffsets.forEach((co) => {
       const cornerGeo = new THREE.BoxGeometry(0.1, cartHeight + 0.04, 0.1);
       const corner = new THREE.Mesh(cornerGeo, this.minecartIronMaterial);
-      corner.position.set(co.x, 0.44, co.z);
+      corner.position.set(co.x, 0.72, co.z);
       group.add(corner);
 
       [-0.18, 0, 0.18].forEach((ry) => {
         const rivetGeo = new THREE.SphereGeometry(0.024, 6, 6);
         const rivet = new THREE.Mesh(rivetGeo, this.goldMaterial);
-        rivet.position.set(co.x + (co.x > 0 ? 0.04 : -0.04), 0.44 + ry, co.z);
+        rivet.position.set(co.x + (co.x > 0 ? 0.04 : -0.04), 0.72 + ry, co.z);
         group.add(rivet);
       });
     });
@@ -1641,13 +2046,13 @@ export class ThreeModelBuilder {
       const axleGeo = new THREE.CylinderGeometry(0.04, 0.04, cartWidth + 0.1, 8);
       axleGeo.rotateZ(Math.PI / 2);
       const axle = new THREE.Mesh(axleGeo, this.minecartIronMaterial);
-      axle.position.set(0, 0.15, az);
+      axle.position.set(0, wheelAxleY, az);
       group.add(axle);
 
       sideOffsets.forEach((sx) => {
         const boxGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
         const box = new THREE.Mesh(boxGeo, this.minecartIronMaterial);
-        box.position.set(sx > 0 ? sx - 0.06 : sx + 0.06, 0.15, az);
+        box.position.set(sx > 0 ? sx - 0.06 : sx + 0.06, wheelAxleY, az);
         group.add(box);
       });
     });
@@ -1655,7 +2060,7 @@ export class ThreeModelBuilder {
     axleOffsets.forEach((az) => {
       sideOffsets.forEach((sx) => {
         const wheelGroup = new THREE.Group();
-        wheelGroup.position.set(sx, 0.15, az);
+        wheelGroup.position.set(sx, wheelAxleY, az);
 
         const treadGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelWidth, 14);
         treadGeo.rotateZ(Math.PI / 2);
@@ -1680,7 +2085,7 @@ export class ThreeModelBuilder {
 
     // Front Brass Lantern mounted on Minecart front
     const lanternGroup = new THREE.Group();
-    lanternGroup.position.set(0, 0.68, -cartLength / 2 - 0.12);
+    lanternGroup.position.set(0, 0.95, -cartLength / 2 - 0.12);
 
     const bracketGeo = new THREE.BoxGeometry(0.06, 0.16, 0.14);
     const bracket = new THREE.Mesh(bracketGeo, this.minecartIronMaterial);
@@ -1709,6 +2114,90 @@ export class ThreeModelBuilder {
     group.add(lanternGroup);
 
     return { group, wheels, lanternFlame: flame };
+  }
+
+  // =========================================================================
+  // 3D SACRED RIVER BOAT FOR LEVEL 3 (RIVER STREAM)
+  // =========================================================================
+  public createRiverBoat(): THREE.Group {
+    const group = new THREE.Group();
+    group.name = 'RIVER_BOAT_GROUP';
+
+    const boatWidth = 1.36;
+    const boatLength = 2.45;
+
+    // 1. Main Curved Wooden Hull (Dark polished teak wood)
+    const hullGeo = new THREE.CylinderGeometry(boatWidth / 2, (boatWidth / 2) * 0.75, boatLength, 16, 1, false);
+    hullGeo.rotateZ(Math.PI / 2);
+    hullGeo.scale(1.0, 0.46, 1.0); // Flatten slightly into canoe/boat shape
+    const hull = new THREE.Mesh(hullGeo, this.minecartWoodMaterial);
+    hull.position.set(0, 0.24, 0);
+    hull.castShadow = true;
+    group.add(hull);
+
+    // 2. Upturned Curved Prow (Bow / Front)
+    const bowGeo = new THREE.ConeGeometry((boatWidth / 2) * 0.9, 0.95, 12);
+    bowGeo.rotateX(-Math.PI / 2);
+    bowGeo.scale(1.0, 0.44, 1.0);
+    const bow = new THREE.Mesh(bowGeo, this.minecartWoodMaterial);
+    bow.position.set(0, 0.28, -boatLength / 2 - 0.28);
+    bow.rotation.x = -0.15; // Upward sweep
+    bow.castShadow = true;
+    group.add(bow);
+
+    // Golden Lotus Prow Finial / Figurehead
+    const prowLotus = this.createSacredLotus();
+    prowLotus.position.set(0, 0.46, -boatLength / 2 - 0.72);
+    prowLotus.scale.set(0.7, 0.7, 0.7);
+    group.add(prowLotus);
+
+    // 3. Tapered Stern (Rear)
+    const sternGeo = new THREE.ConeGeometry((boatWidth / 2) * 0.85, 0.7, 12);
+    sternGeo.rotateX(Math.PI / 2);
+    sternGeo.scale(1.0, 0.44, 1.0);
+    const stern = new THREE.Mesh(sternGeo, this.minecartWoodMaterial);
+    stern.position.set(0, 0.26, boatLength / 2 + 0.18);
+    stern.rotation.x = 0.12; // Slight upward sweep at stern
+    stern.castShadow = true;
+    group.add(stern);
+
+    // 4. Polished Golden Gunwale Rims (Left & Right top rails)
+    const gunwaleGeo = new THREE.CylinderGeometry(0.04, 0.04, boatLength + 0.5, 8);
+    gunwaleGeo.rotateX(Math.PI / 2);
+    const leftGunwale = new THREE.Mesh(gunwaleGeo, this.shinyGoldMaterial);
+    leftGunwale.position.set(-boatWidth / 2 + 0.04, 0.46, -0.05);
+    const rightGunwale = new THREE.Mesh(gunwaleGeo, this.shinyGoldMaterial);
+    rightGunwale.position.set(boatWidth / 2 - 0.04, 0.46, -0.05);
+    group.add(leftGunwale, rightGunwale);
+
+    // 5. Inner Hollow Deck / Seating Floor
+    const deckGeo = new THREE.PlaneGeometry(boatWidth - 0.2, boatLength - 0.4);
+    deckGeo.rotateX(-Math.PI / 2);
+    const deck = new THREE.Mesh(deckGeo, new THREE.MeshBasicMaterial({ color: 0x1c130c }));
+    deck.position.set(0, 0.18, 0);
+    group.add(deck);
+
+    // Cross-Thwarts (Wooden Benches for Ganesha and Mooshika)
+    const benchGeo = new THREE.BoxGeometry(boatWidth - 0.1, 0.06, 0.35);
+    const rearBench = new THREE.Mesh(benchGeo, this.minecartWoodMaterial);
+    rearBench.position.set(0, 0.26, 0.14); // Ganesha's seat
+    const frontBench = new THREE.Mesh(benchGeo, this.minecartWoodMaterial);
+    frontBench.position.set(0, 0.26, -0.44); // Mooshika's seat
+    group.add(rearBench, frontBench);
+
+    // 6. Waterline Foam / Ripple Collar around Boat (cutting through rushing river water)
+    const wakeGeo = new THREE.PlaneGeometry(boatWidth + 0.5, boatLength + 0.9);
+    wakeGeo.rotateX(-Math.PI / 2);
+    const wake = new THREE.Mesh(wakeGeo, this.waterFoamMat);
+    wake.position.set(0, 0.04, -0.15);
+    group.add(wake);
+
+    // 7. Front Brass Lantern mounted on Prow for river illumination
+    const lantern = this.createFrontObstacleLantern(0.85);
+    lantern.position.set(0, 0.52, -boatLength / 2 - 0.4);
+    group.add(lantern);
+
+    return group;
   }
 
   // =========================================================================
@@ -2013,13 +2502,95 @@ export class ThreeModelBuilder {
     innerNecklace.position.set(0, 0.95, -0.08);
     ganeshaGroup.add(necklaceMesh, innerNecklace);
 
-    // 3. Elephant Head
-    const headBaseGeo = new THREE.SphereGeometry(0.39, 18, 18);
+    // 3. Ultra-High-Detail Elephant Head & Facial Features (CRITICAL)
+    const headBaseGeo = new THREE.SphereGeometry(0.39, 20, 20);
     headBaseGeo.scale(1.0, 1.05, 0.95);
     const headBaseMesh = new THREE.Mesh(headBaseGeo, this.ganeshaSkinMaterial);
     headBaseMesh.position.set(0, 1.25, -0.06);
     headBaseMesh.castShadow = true;
     ganeshaGroup.add(headBaseMesh);
+
+    // Iconic Rounded Forehead Frontal Lobes (Kumbha)
+    const lobeGeo = new THREE.SphereGeometry(0.18, 14, 14);
+    lobeGeo.scale(1.0, 1.15, 0.85);
+    const leftLobe = new THREE.Mesh(lobeGeo, this.ganeshaSkinMaterial);
+    leftLobe.position.set(-0.13, 1.42, -0.22);
+    const rightLobe = new THREE.Mesh(lobeGeo, this.ganeshaSkinMaterial);
+    rightLobe.position.set(0.13, 1.42, -0.22);
+    ganeshaGroup.add(leftLobe, rightLobe);
+
+    // =========================================================================
+    // ULTRA-HIGH-DETAIL EYES WITH DISTINCT PUPILS (CRITICAL REQUIREMENT)
+    // Wide open, fully rendered, clearly visible with dark pupils & catchlights
+    // =========================================================================
+    const eyeScleraMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.12,
+      metalness: 0.0,
+    });
+    const eyeKohlMat = new THREE.MeshBasicMaterial({ color: 0x18181b }); // Traditional kohl eyeliner
+    const eyebrowMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 });
+
+    [-1, 1].forEach((side) => {
+      const ex = 0.175 * side;
+      const ey = 1.30;
+      const ez = -0.385;
+
+      const eyeGroup = new THREE.Group();
+      eyeGroup.position.set(ex, ey, ez);
+
+      // 1. Sclera (Eyeball hemisphere backing with 3D volume)
+      const scleraGeo = new THREE.SphereGeometry(0.082, 16, 14);
+      scleraGeo.scale(1.2, 0.9, 0.75);
+      const sclera = new THREE.Mesh(scleraGeo, eyeScleraMat);
+      sclera.rotation.y = side * -0.22;
+      sclera.rotation.z = side * 0.08;
+      eyeGroup.add(sclera);
+
+      // 2. Mesmerizing Divine Almond Eye Mesh (Deep Warm Brown Iris & Natural Radial Patterns)
+      const eyeTex = side === 1
+        ? ThreeModelBuilder.cachedDivineEyeRightTexture
+        : ThreeModelBuilder.cachedDivineEyeLeftTexture;
+
+      const divineEyeGeo = new THREE.PlaneGeometry(0.24, 0.15);
+      const divineEyeMat = new THREE.MeshBasicMaterial({
+        map: eyeTex,
+        transparent: true,
+        alphaTest: 0.01,
+        depthWrite: false,
+      });
+      const divineEyeMesh = new THREE.Mesh(divineEyeGeo, divineEyeMat);
+      divineEyeMesh.position.set(0, 0, -0.066);
+      divineEyeMesh.rotation.y = side * -0.22;
+      divineEyeMesh.rotation.z = side * 0.06;
+      eyeGroup.add(divineEyeMesh);
+
+      // 3. Elegant 3D Upper Kohl Eyeliner Rim (Lotus petal almond curve)
+      const upperLidGeo = new THREE.TorusGeometry(0.082, 0.012, 6, 18, Math.PI);
+      const upperLid = new THREE.Mesh(upperLidGeo, eyeKohlMat);
+      upperLid.position.set(0, 0.014, -0.054);
+      upperLid.rotation.y = side * -0.22;
+      upperLid.rotation.z = side * 0.06;
+      eyeGroup.add(upperLid);
+
+      // 4. Elegant 3D Lower Kohl Eyeliner Rim
+      const lowerLidGeo = new THREE.TorusGeometry(0.078, 0.010, 6, 18, Math.PI);
+      const lowerLid = new THREE.Mesh(lowerLidGeo, eyeKohlMat);
+      lowerLid.position.set(0, -0.014, -0.054);
+      lowerLid.rotation.y = side * -0.22;
+      lowerLid.rotation.z = Math.PI + side * 0.06;
+      eyeGroup.add(lowerLid);
+
+      // 5. Elegant Arched Eyebrow above eye
+      const browGeo = new THREE.CylinderGeometry(0.014, 0.02, 0.24, 8);
+      const brow = new THREE.Mesh(browGeo, eyebrowMat);
+      brow.position.set(0, 0.098, -0.01);
+      brow.rotation.z = side * -0.26;
+      brow.rotation.y = side * -0.22;
+      eyeGroup.add(brow);
+
+      ganeshaGroup.add(eyeGroup);
+    });
 
     // Gracefully Curved Trunk (Vakratunda) with Golden Tip Ornament
     const trunkCurve = new THREE.CatmullRomCurve3([
@@ -2038,20 +2609,34 @@ export class ThreeModelBuilder {
     trunkRing.position.set(0.2, 0.77, -0.48);
     ganeshaGroup.add(trunkMesh, trunkRing);
 
-    // Sacred Red Tilak on Forehead (Matching Reference)
-    const tilakGeo = new THREE.BoxGeometry(0.08, 0.16, 0.02);
+    // Sacred Red Tilak on Forehead (Trishula / Chandrakala design)
+    const tilakGeo = new THREE.BoxGeometry(0.065, 0.18, 0.02);
     const tilakMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
     const tilakMesh = new THREE.Mesh(tilakGeo, tilakMat);
-    tilakMesh.position.set(0, 1.4, -0.42);
-    ganeshaGroup.add(tilakMesh);
+    tilakMesh.position.set(0, 1.41, -0.43);
 
-    // Ekadanta (Single Tusk with Golden Ring)
-    const tuskGeo = new THREE.ConeGeometry(0.04, 0.18, 8);
-    tuskGeo.rotateX(Math.PI / 1.5);
+    const tilakCrescentGeo = new THREE.TorusGeometry(0.08, 0.015, 6, 14, Math.PI);
+    const tilakCrescentMat = new THREE.MeshBasicMaterial({ color: 0xfde047 });
+    const tilakCrescent = new THREE.Mesh(tilakCrescentGeo, tilakCrescentMat);
+    tilakCrescent.position.set(0, 1.33, -0.43);
+
+    const tilakBinduGeo = new THREE.SphereGeometry(0.022, 8, 8);
+    const tilakBindu = new THREE.Mesh(tilakBinduGeo, tilakCrescentMat);
+    tilakBindu.position.set(0, 1.37, -0.435);
+    ganeshaGroup.add(tilakMesh, tilakCrescent, tilakBindu);
+
+    // Ekadanta (Single Broken Tusk with Golden Ring on Right, Curved Tusk on Left)
     const tuskMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
-    const rightTusk = new THREE.Mesh(tuskGeo, tuskMat);
-    rightTusk.position.set(-0.16, 1.04, -0.36);
-    ganeshaGroup.add(rightTusk);
+    const brokenTuskGeo = new THREE.ConeGeometry(0.045, 0.13, 8);
+    brokenTuskGeo.rotateX(Math.PI / 1.5);
+    const rightTusk = new THREE.Mesh(brokenTuskGeo, tuskMat);
+    rightTusk.position.set(-0.16, 1.05, -0.36);
+
+    const leftTuskGeo = new THREE.ConeGeometry(0.045, 0.22, 8);
+    leftTuskGeo.rotateX(Math.PI / 1.45);
+    const leftTusk = new THREE.Mesh(leftTuskGeo, tuskMat);
+    leftTusk.position.set(0.16, 1.02, -0.36);
+    ganeshaGroup.add(rightTusk, leftTusk);
 
     // Large Divine Elephant Ears with Golden Kundala Earrings
     const leftEarGroup = new THREE.Group();
@@ -2082,16 +2667,12 @@ export class ThreeModelBuilder {
     ganeshaGroup.add(leftEarGroup, rightEarGroup);
     ears.push(leftEarGroup, rightEarGroup);
 
-    // 4. Long Flowing Dark Hair Cascading behind Crown (Matching Reference Image)
+    // 4. Long Flowing Dark Hair Cascading behind Crown
     const hairGroup = this.createFlowingDarkHair();
     hairGroup.position.set(0, 1.35, 0.08);
     ganeshaGroup.add(hairGroup);
 
-    // 5. Four Divine Arms with Sacred Items (Matching Reference Image)
-    // - Axe in upper right hand
-    // - Pink Lotus in upper left hand
-    // - Bowl of Modak sweets in lower left hand
-    // - Abhaya Mudra blessing pose in lower right hand
+    // 5. Four Divine Arms with Sacred Items
     this.attachGaneshaArms(ganeshaGroup);
 
     // 6. Magnificent Tiered Golden Mukut (Crown) with Jewels
@@ -2099,46 +2680,24 @@ export class ThreeModelBuilder {
     mukutGroup.position.set(0, 1.55, -0.06);
     ganeshaGroup.add(mukutGroup);
 
-    // 7. Soft Golden Aura (Prabhavali)
-    const auraInnerGeo = new THREE.RingGeometry(0.68, 0.92, 24);
-    const auraInnerMat = new THREE.MeshBasicMaterial({
-      color: 0xfde047,
-      transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const auraInner = new THREE.Mesh(auraInnerGeo, auraInnerMat);
-    auraInner.position.set(0, 1.35, 0.2);
-
-    const auraOuterGeo = new THREE.RingGeometry(0.85, 1.18, 24);
-    const auraOuterMat = new THREE.MeshBasicMaterial({
-      color: 0xf59e0b,
-      transparent: true,
-      opacity: 0.35,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const auraOuter = new THREE.Mesh(auraOuterGeo, auraOuterMat);
-    auraOuter.position.set(0, 1.35, 0.21);
-
-    ganeshaGroup.add(auraInner, auraOuter);
+    // NOTE: Absolutely NO glowing aura or backlighting behind Ganesha (Critical Constraint)
     characterRotator.add(ganeshaGroup);
 
-    // 8. 3D Minecart for Level 2 (Subterranean Railway)
+    // 7. 3D Minecart for Level 2 (Subterranean Railway)
     const { group: minecartGroup, wheels: minecartWheels } = this.createMinecart();
     minecartGroup.visible = false; // Initially hidden in Level 1
     characterRotator.add(minecartGroup);
+
+    // 8. 3D River Boat for Level 3 (River Stream)
+    const boatGroup = this.createRiverBoat();
+    boatGroup.visible = false; // Initially hidden in Level 1 & 2
+    characterRotator.add(boatGroup);
 
     return {
       root,
       characterRotator,
       legs,
       tail: tailGroup,
-      auraInner,
-      auraOuter,
       ears,
       mooshikaGroup,
       ganeshaGroup,
@@ -2146,6 +2705,7 @@ export class ThreeModelBuilder {
       hairGroup,
       minecartGroup,
       minecartWheels,
+      boatGroup,
     };
   }
 
@@ -2650,34 +3210,105 @@ export class ThreeModelBuilder {
 
   public createFestiveBarricade(): THREE.Group {
     const group = new THREE.Group();
+    group.name = 'FESTIVE_BARRICADE';
 
-    const leftPost = new THREE.Mesh(this.barricadePostGeo, this.cartWoodMaterial);
-    leftPost.position.set(-0.95, 0.8, 0);
+    // Width spans 2.3m across the railway lane, total height 1.1m (jumpable or avoidable)
+    const span = 2.3;
+    const postHeight = 1.1;
+    const postThick = 0.16;
 
-    const rightPost = new THREE.Mesh(this.barricadePostGeo, this.cartWoodMaterial);
-    rightPost.position.set(0.95, 0.8, 0);
+    // 1. Heavy Timber Support Posts on Left and Right
+    const postGeo = new THREE.BoxGeometry(postThick, postHeight, postThick);
+    const leftPost = new THREE.Mesh(postGeo, this.timberArchMaterial);
+    leftPost.position.set(-span / 2 + 0.18, postHeight / 2, 0);
+    leftPost.castShadow = true;
 
-    const leftFinial = new THREE.Mesh(this.barricadeFinialGeo, this.shinyGoldMaterial);
-    leftFinial.position.set(-0.95, 1.65, 0);
-    const rightFinial = new THREE.Mesh(this.barricadeFinialGeo, this.shinyGoldMaterial);
-    rightFinial.position.set(0.95, 1.65, 0);
+    const rightPost = new THREE.Mesh(postGeo, this.timberArchMaterial);
+    rightPost.position.set(span / 2 - 0.18, postHeight / 2, 0);
+    rightPost.castShadow = true;
 
-    const topBeam = new THREE.Mesh(this.barricadeBeamGeo, this.cartWoodMaterial);
-    topBeam.position.set(0, 1.3, 0);
+    // 2. Heavy Timber A-Frame Feet / Base Supports
+    const footGeo = new THREE.BoxGeometry(0.14, 0.12, 0.65);
+    const leftFoot = new THREE.Mesh(footGeo, this.timberArchMaterial);
+    leftFoot.position.set(-span / 2 + 0.18, 0.06, 0);
+    const rightFoot = new THREE.Mesh(footGeo, this.timberArchMaterial);
+    rightFoot.position.set(span / 2 - 0.18, 0.06, 0);
 
-    const bottomBeam = new THREE.Mesh(this.barricadeBeamGeo, this.cartWoodMaterial);
-    bottomBeam.position.set(0, 0.65, 0);
+    // Diagonal stabilizer knee-braces
+    const kneeGeo = new THREE.BoxGeometry(0.08, 0.42, 0.08);
+    const leftKneeF = new THREE.Mesh(kneeGeo, this.timberArchMaterial);
+    leftKneeF.position.set(-span / 2 + 0.18, 0.22, 0.16);
+    leftKneeF.rotation.x = -Math.PI / 4;
+    const leftKneeB = new THREE.Mesh(kneeGeo, this.timberArchMaterial);
+    leftKneeB.position.set(-span / 2 + 0.18, 0.22, -0.16);
+    leftKneeB.rotation.x = Math.PI / 4;
 
-    const leftLantern = this.createFrontObstacleLantern(0.9);
-    leftLantern.position.set(-0.95, 1.1, 0.15);
-    const rightLantern = this.createFrontObstacleLantern(0.9);
-    rightLantern.position.set(0.95, 1.1, 0.15);
+    const rightKneeF = new THREE.Mesh(kneeGeo, this.timberArchMaterial);
+    rightKneeF.position.set(span / 2 - 0.18, 0.22, 0.16);
+    rightKneeF.rotation.x = -Math.PI / 4;
+    const rightKneeB = new THREE.Mesh(kneeGeo, this.timberArchMaterial);
+    rightKneeB.position.set(span / 2 - 0.18, 0.22, -0.16);
+    rightKneeB.rotation.x = Math.PI / 4;
 
-    group.add(leftPost, rightPost, leftFinial, rightFinial, topBeam, bottomBeam, leftLantern, rightLantern);
+    // 3. Horizontal Wooden Barrier Bars with Red & White Diagonal Warning Stripes
+    const barLength = span;
+    const barHeight = 0.22;
+    const barThick = 0.08;
+    const barGeo = new THREE.BoxGeometry(barLength, barHeight, barThick);
+
+    // Top Warning Bar
+    const topBar = new THREE.Mesh(barGeo, this.railwayBarricadeStripeMat);
+    topBar.position.set(0, 0.85, 0.08);
+    topBar.castShadow = true;
+
+    // Bottom Warning Bar
+    const bottomBar = new THREE.Mesh(barGeo, this.railwayBarricadeStripeMat);
+    bottomBar.position.set(0, 0.44, 0.08);
+    bottomBar.castShadow = true;
+
+    // 4. Rear Diagonal Timber Cross Bracing
+    const crossGeo = new THREE.BoxGeometry(0.08, 1.25, 0.06);
+    const cross1 = new THREE.Mesh(crossGeo, this.timberArchMaterial);
+    cross1.position.set(0, 0.64, 0);
+    cross1.rotation.z = Math.PI / 5;
+    const cross2 = new THREE.Mesh(crossGeo, this.timberArchMaterial);
+    cross2.position.set(0, 0.64, 0);
+    cross2.rotation.z = -Math.PI / 5;
+
+    // 5. Central Railway Warning Sign ("STOP / RAIL")
+    const signGeo = new THREE.PlaneGeometry(0.38, 0.38);
+    const sign = new THREE.Mesh(signGeo, this.railwayBarricadeSignMat);
+    sign.position.set(0, 0.64, 0.13);
+
+    // 6. Twin Amber/Red Railway Hazard Warning Lanterns on Top of Posts
+    const leftLight = this.createFrontObstacleLantern(0.9);
+    leftLight.position.set(-span / 2 + 0.18, postHeight + 0.08, 0);
+    const rightLight = this.createFrontObstacleLantern(0.9);
+    rightLight.position.set(span / 2 - 0.18, postHeight + 0.08, 0);
+
+    // 7. Ground Rail Clamps (Iron brackets clamping to track)
+    const clampGeo = new THREE.BoxGeometry(0.2, 0.08, 0.24);
+    const leftClamp = new THREE.Mesh(clampGeo, this.minecartIronMaterial);
+    leftClamp.position.set(-span / 2 + 0.18, 0.04, 0);
+    const rightClamp = new THREE.Mesh(clampGeo, this.minecartIronMaterial);
+    rightClamp.position.set(span / 2 - 0.18, 0.04, 0);
+
+    group.add(
+      leftPost, rightPost,
+      leftFoot, rightFoot,
+      leftKneeF, leftKneeB, rightKneeF, rightKneeB,
+      topBar, bottomBar,
+      cross1, cross2,
+      sign,
+      leftLight, rightLight,
+      leftClamp, rightClamp
+    );
+
     group.userData.flames = [
-      leftLantern.userData.flame,
-      rightLantern.userData.flame,
+      leftLight.userData.flame,
+      rightLight.userData.flame,
     ];
+
     return group;
   }
 
@@ -2861,13 +3492,13 @@ export class ThreeModelBuilder {
     segment.name = 'DUAL_LEVEL_ROAD_SEGMENT';
 
     // -----------------------------------------------------------------------
-    // LEVEL 1: MOUNTAIN FOREST TRAIL
+    // LEVEL 1: GREY STONE ROAD WITH INTRICATE MANDALAS & ROADSIDE PILLARS/CARTS
     // -----------------------------------------------------------------------
     const level1Group = new THREE.Group();
     level1Group.name = 'LEVEL_1_GROUP';
 
-    // 1. Mountain Trail Dirt Surface (Earthy mountain trail texture)
-    const roadMesh = new THREE.Mesh(this.roadPlaneGeo, this.mountainTrailMaterial);
+    // 1. Grey Stone Road Surface
+    const roadMesh = new THREE.Mesh(this.roadPlaneGeo, this.stoneRoadMaterial);
     level1Group.add(roadMesh);
 
     // 2. Clear 3-Lane Dividers (Soft golden sandstone/brass inlay)
@@ -2877,7 +3508,15 @@ export class ThreeModelBuilder {
       level1Group.add(lineMesh);
     });
 
-    // 3. Natural Mountain Trail Curbs (Mossy granite stone edges)
+    // 3. Intricate Carved Mandala Reliefs along Center of Road
+    const mandalaStep = 16.66;
+    for (let mz = -length / 2 + mandalaStep / 2; mz <= length / 2; mz += mandalaStep) {
+      const mandalaMesh = new THREE.Mesh(this.mandalaDecalGeo, this.mandalaDecalMaterial);
+      mandalaMesh.position.set(0, 0.016, mz);
+      level1Group.add(mandalaMesh);
+    }
+
+    // 4. Natural Stone Curbs
     const roadWidth = 8.6;
     const leftCurb = new THREE.Mesh(this.roadCurbGeo, this.mountainRockMaterial);
     leftCurb.position.set(-roadWidth / 2 - 0.32, 0.16, 0);
@@ -2885,22 +3524,37 @@ export class ThreeModelBuilder {
     rightCurb.position.set(roadWidth / 2 + 0.32, 0.16, 0);
     level1Group.add(leftCurb, rightCurb);
 
-    // 4. Dense Forest on Left & Right Sides
+    // 5. Dense Forest on Left & Right Outer Sides
     this.populateDenseForestSides(level1Group, length, roadWidth);
 
-    // 5. Rustic Stone Pedestals with Lit Diyas along the Trail Borders
-    const lampStep = 25;
-    for (let pz = -length / 2 + 12; pz <= length / 2 - 12; pz += lampStep) {
-      [-roadWidth / 2 - 0.9, roadWidth / 2 + 0.9].forEach((px) => {
-        const diyaPost = this.createGlowingDiyaPost();
-        diyaPost.position.set(px, 0.16, pz);
-        level1Group.add(diyaPost);
+    // 6. Carved Stone Pillars & Lit Wooden Carts along Road Edges
+    const edgeStep = 24;
+    for (let ez = -length / 2 + 12; ez <= length / 2 - 12; ez += edgeStep) {
+      const isEven = (Math.floor((ez + length / 2) / edgeStep)) % 2 === 0;
 
-        const poolMesh = new THREE.Mesh(this.diyaLightPoolGeo, this.diyaLightPoolMat);
-        const roadInwardOffset = px < 0 ? 0.7 : -0.7;
-        poolMesh.position.set(px + roadInwardOffset, 0.02, pz);
-        level1Group.add(poolMesh);
-      });
+      // Left edge
+      const leftX = -roadWidth / 2 - 0.95;
+      if (isEven) {
+        const pillar = this.createStonePillar();
+        pillar.position.set(leftX, 0, ez);
+        level1Group.add(pillar);
+      } else {
+        const cart = this.createWoodenCart();
+        cart.position.set(leftX - 0.25, 0, ez);
+        level1Group.add(cart);
+      }
+
+      // Right edge
+      const rightX = roadWidth / 2 + 0.95;
+      if (!isEven) {
+        const pillar = this.createStonePillar();
+        pillar.position.set(rightX, 0, ez);
+        level1Group.add(pillar);
+      } else {
+        const cart = this.createWoodenCart();
+        cart.position.set(rightX + 0.25, 0, ez);
+        level1Group.add(cart);
+      }
     }
 
     segment.add(level1Group);
@@ -3601,26 +4255,6 @@ export class ThreeModelBuilder {
     return group;
   }
 
-  private createGlowingDiyaPost(): THREE.Group {
-    const postGroup = new THREE.Group();
-
-    const pedestal = new THREE.Mesh(this.diyaPedestalGeo, this.carvedPillarMaterial);
-    pedestal.position.y = 0.32;
-
-    const diyaBowl = new THREE.Mesh(this.diyaBowlGeo, this.diyaBrassMaterial);
-    diyaBowl.position.y = 0.7;
-
-    const flame = new THREE.Mesh(this.diyaFlameGeo, this.diyaFlameMat);
-    flame.position.y = 0.88;
-    flame.name = 'DIYA_FLAME';
-
-    const flameCore = new THREE.Mesh(this.diyaFlameCoreGeo, this.diyaFlameCoreMat);
-    flameCore.position.y = 0.84;
-
-    postGroup.add(pedestal, diyaBowl, flame, flameCore);
-    return postGroup;
-  }
-
   public createDrapedMarigoldGarland(span: number): THREE.Group {
     const group = new THREE.Group();
     const flowerCount = 8;
@@ -3656,23 +4290,23 @@ export class ThreeModelBuilder {
     const skyMesh = new THREE.Mesh(skyGeo, skyMat);
     skyGroup.add(skyMesh);
 
-    // 2. MASSIVE GOLDEN-ORANGE MORNING SUN ON FORWARD HORIZON
-    const sunZ = -340;
-    const sunY = 16;
+    // 2. MORNING SUN PLACED HIGH UP IN THE SKY (NO GLARE IN CAMERA)
+    const sunZ = -260;
+    const sunY = 135; // High up overhead well above character & camera frustum
     const sunGroup = new THREE.Group();
     sunGroup.position.set(0, sunY, sunZ);
 
     // Sun Luminous Core
-    const sunCoreGeo = new THREE.CircleGeometry(42, 36);
+    const sunCoreGeo = new THREE.CircleGeometry(24, 32);
     const sunCore = new THREE.Mesh(sunCoreGeo, this.sunCoreMat);
     sunGroup.add(sunCore);
 
     // Sun Radiant Solar Corona Ring
-    const sunCoronaGeo = new THREE.RingGeometry(40, 95, 36);
+    const sunCoronaGeo = new THREE.RingGeometry(22, 52, 32);
     const sunCoronaMat = new THREE.MeshBasicMaterial({
-      color: 0xf97316,
+      color: 0xfbbf24,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.65,
       blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
       depthWrite: false,
@@ -3682,7 +4316,7 @@ export class ThreeModelBuilder {
     sunGroup.add(sunCorona);
 
     // Broad Outer Sun Glow Aura
-    const sunOuterAuraGeo = new THREE.CircleGeometry(160, 32);
+    const sunOuterAuraGeo = new THREE.CircleGeometry(85, 32);
     const sunOuterAura = new THREE.Mesh(sunOuterAuraGeo, this.sunGlowMat);
     sunOuterAura.position.z = -0.1;
     sunGroup.add(sunOuterAura);
@@ -3697,30 +4331,30 @@ export class ThreeModelBuilder {
     const midTreeLineGroup = this.createMidDistanceTreeLine(sunZ + 55);
     skyGroup.add(midTreeLineGroup);
 
-    // 5. DISTINCT CREPUSCULAR RAYS (GOD RAYS) BEAMING THROUGH MOUNTAIN PEAKS
+    // 5. SOFT CREPUSCULAR RAYS ANGLING DOWN FROM HIGH OVERHEAD
     const godRaysGroup = new THREE.Group();
     godRaysGroup.name = 'CREPUSCULAR_GOD_RAYS';
 
-    const rayCount = 14;
+    const rayCount = 10;
     for (let i = 0; i < rayCount; i++) {
       const angleProgress = (i / (rayCount - 1)) - 0.5;
-      const fanAngle = angleProgress * 1.35;
+      const fanAngle = angleProgress * 1.1;
 
-      const rayLength = 360;
-      const rayWidthEnd = 38 + Math.abs(angleProgress) * 25;
+      const rayLength = 260;
+      const rayWidthEnd = 28 + Math.abs(angleProgress) * 18;
 
       const rayGeo = new THREE.PlaneGeometry(rayWidthEnd, rayLength, 1, 4);
       rayGeo.translate(0, -rayLength / 2, 0);
 
       const rayMesh = new THREE.Mesh(rayGeo, this.godRayMat);
-      rayMesh.position.set(0, sunY + 4, sunZ + 2);
+      rayMesh.position.set(0, sunY, sunZ + 2);
 
       rayMesh.rotation.z = fanAngle;
-      rayMesh.rotation.x = -Math.PI / 2.35 + Math.abs(angleProgress) * 0.15;
+      rayMesh.rotation.x = -Math.PI / 3.0 + Math.abs(angleProgress) * 0.1;
 
       rayMesh.userData = {
-        baseOpacity: 0.28 + (Math.sin(i * 1.7) * 0.1),
-        speed: 0.6 + (i % 3) * 0.25,
+        baseOpacity: 0.20 + (Math.sin(i * 1.7) * 0.06),
+        speed: 0.5 + (i % 3) * 0.2,
         phase: i * 0.8,
       };
 

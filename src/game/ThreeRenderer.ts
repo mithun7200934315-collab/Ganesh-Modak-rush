@@ -15,8 +15,6 @@ export class ThreeRenderer {
   private characterRotator: THREE.Group | null = null;
   private playerLegs: THREE.Mesh[] = [];
   private playerTail: THREE.Group | null = null;
-  private playerAuraInner: THREE.Mesh | null = null;
-  private playerAuraOuter: THREE.Mesh | null = null;
   private playerEars: THREE.Group[] = [];
   private ganeshaGroup: THREE.Group | null = null;
   private mooshikaGroup: THREE.Group | null = null;
@@ -40,6 +38,7 @@ export class ThreeRenderer {
   private currentFogColor: THREE.Color = new THREE.Color(0xc7d2fe);
   private minecartGroup: THREE.Group | null = null;
   private minecartWheels: THREE.Mesh[] = [];
+  private boatGroup: THREE.Group | null = null;
 
   // Ambient Falling Leaves (Task 1: Foreground / Ambience)
   private leafGeo!: THREE.BufferGeometry;
@@ -108,6 +107,8 @@ export class ThreeRenderer {
   private dirLight!: THREE.DirectionalLight;
   private ambientLight!: THREE.AmbientLight;
   private playerPointLight!: THREE.PointLight;
+  private faceKeyLight!: THREE.DirectionalLight;
+  private faceCameraLight!: THREE.DirectionalLight;
 
   // Resize debouncing
   private resizeFrameId: number | null = null;
@@ -156,23 +157,30 @@ export class ThreeRenderer {
 
   private setupLighting() {
     // Warm Peach & Golden Dawn Ambient Light
-    this.ambientLight = new THREE.AmbientLight(0xffedd5, 1.15);
+    this.ambientLight = new THREE.AmbientLight(0xffedd5, 1.25);
     this.scene.add(this.ambientLight);
 
-    // Early Morning Sun Directional Light (beaming from forward horizon toward camera)
+    // Early Morning Sun Directional Light (positioned high overhead to eliminate glare)
     this.dirLight = new THREE.DirectionalLight(0xfef08a, 1.65);
-    this.dirLight.position.set(0, 18, -45);
+    this.dirLight.position.set(0, 45, -60);
     this.dirLight.castShadow = false;
     this.scene.add(this.dirLight);
     this.scene.add(this.dirLight.target);
 
-    // Subtle Rose/Gold Rim Light for Divine Character Silhouette
-    const rimLight = new THREE.DirectionalLight(0xf472b6, 0.75);
-    rimLight.position.set(0, 16, 20);
-    this.scene.add(rimLight);
+    // Strong, soft front-lighting angled directly at Ganesha's face so his eyes and features are perfectly illuminated
+    this.faceKeyLight = new THREE.DirectionalLight(0xfff7ed, 2.5);
+    this.faceKeyLight.position.set(0, 3.5, -4.5);
+    this.scene.add(this.faceKeyLight);
+    this.scene.add(this.faceKeyLight.target);
+
+    // Camera-facing fill light for when Ganesha turns 180° to look directly into camera (Mega Modak bonus)
+    this.faceCameraLight = new THREE.DirectionalLight(0xfffbeb, 2.0);
+    this.faceCameraLight.position.set(0, 3.0, 4.5);
+    this.scene.add(this.faceCameraLight);
+    this.scene.add(this.faceCameraLight.target);
 
     // Warm Golden Lantern PointLight following the player for road illumination
-    this.playerPointLight = new THREE.PointLight(0xfbbf24, 1.9, 14);
+    this.playerPointLight = new THREE.PointLight(0xfbbf24, 1.8, 14);
     this.playerPointLight.position.set(0, 2.5, 0);
     this.scene.add(this.playerPointLight);
   }
@@ -196,9 +204,10 @@ export class ThreeRenderer {
   }
 
   public resetRoad(playerZ: number = 0) {
-    const isLevel1 = this.currentLevel === 1;
-    const isLevel2 = this.currentLevel === 2;
-    const isLevel3 = this.currentLevel >= 3;
+    const themeIndex = (this.currentLevel - 1) % 3;
+    const isLevel1 = themeIndex === 0;
+    const isLevel2 = themeIndex === 1;
+    const isLevel3 = themeIndex === 2;
     for (let i = 0; i < this.roadSegments.length; i++) {
       // Offset by 1 segment behind so road extends behind camera
       const z = playerZ + ROAD_SEGMENT_LENGTH - (i * ROAD_SEGMENT_LENGTH);
@@ -255,8 +264,6 @@ export class ThreeRenderer {
     this.characterRotator = char.characterRotator;
     this.playerLegs = char.legs;
     this.playerTail = char.tail;
-    this.playerAuraInner = char.auraInner;
-    this.playerAuraOuter = char.auraOuter;
     this.playerEars = char.ears;
     this.ganeshaGroup = char.ganeshaGroup;
     this.mooshikaGroup = char.mooshikaGroup;
@@ -264,6 +271,7 @@ export class ThreeRenderer {
     this.hairGroup = char.hairGroup;
     this.minecartGroup = char.minecartGroup;
     this.minecartWheels = char.minecartWheels;
+    this.boatGroup = char.boatGroup || null;
     this.scene.add(this.playerRoot);
 
     // Soft grounded contact shadow under Mooshika and Lord Ganesha (0 extra draw passes)
@@ -626,9 +634,10 @@ export class ThreeRenderer {
     }
     this.lastPlayerZ = player.z;
 
-    // 0b. Level Transition Check (Level 1: Mountain Trail, Level 2: Minecart Railway, Level 3: River Stream)
-    const isLevel2 = _state.level === 2;
-    const isLevel3 = _state.level >= 3;
+    // 0b. Level Transition Check (Cycles themes: 0=Mountain Trail, 1=Minecart Railway, 2=River Stream)
+    const themeIndex = (_state.level - 1) % 3;
+    const isLevel2 = themeIndex === 1;
+    const isLevel3 = themeIndex === 2;
     if (this.currentLevel !== _state.level) {
       this.currentLevel = _state.level;
       if (isLevel3) {
@@ -642,6 +651,7 @@ export class ThreeRenderer {
           if (seg.userData.level3Group) seg.userData.level3Group.visible = true;
         }
         if (this.minecartGroup) this.minecartGroup.visible = false;
+        if (this.boatGroup) this.boatGroup.visible = true;
         this.spawnTransformationBurst(player.x, player.y + 1.2, player.z - 2);
       } else if (isLevel2) {
         if (this.skyGroup) this.skyGroup.visible = false;
@@ -654,6 +664,7 @@ export class ThreeRenderer {
           if (seg.userData.level3Group) seg.userData.level3Group.visible = false;
         }
         if (this.minecartGroup) this.minecartGroup.visible = true;
+        if (this.boatGroup) this.boatGroup.visible = false;
         this.spawnTransformationBurst(player.x, player.y + 1.2, player.z - 2);
       } else {
         if (this.skyGroup) this.skyGroup.visible = true;
@@ -666,6 +677,8 @@ export class ThreeRenderer {
           if (seg.userData.level3Group) seg.userData.level3Group.visible = false;
         }
         if (this.minecartGroup) this.minecartGroup.visible = false;
+        if (this.boatGroup) this.boatGroup.visible = false;
+        this.spawnTransformationBurst(player.x, player.y + 1.2, player.z - 2);
       }
     }
 
@@ -695,8 +708,61 @@ export class ThreeRenderer {
 
       const runCycle = player.runCycle;
 
-      // Character & Minecart Animations
-      if (isLevel2) {
+      // Character, Minecart & Boat Animations
+      if (isLevel3) {
+        // --- LEVEL 3: RIDING IN BOAT ON RIVER STREAM ---
+        if (this.boatGroup) {
+          this.boatGroup.visible = true;
+        }
+        if (this.minecartGroup) {
+          this.minecartGroup.visible = false;
+        }
+
+        // Boat bobbing, pitching, and rolling with rushing river current
+        const boatBob = Math.sin(time * 3.5 + runCycle * 0.4) * 0.02;
+        const boatPitch = Math.sin(time * 2.8) * 0.015;
+        const boatRoll = Math.cos(time * 2.2) * 0.018;
+        if (this.boatGroup) {
+          this.boatGroup.position.set(0, boatBob, 0);
+          this.boatGroup.rotation.set(boatPitch, 0, boatRoll);
+        }
+
+        // Lord Ganesha seated inside the boat
+        if (this.ganeshaGroup) {
+          this.ganeshaGroup.visible = true;
+          if (player.state === 'SLIDING') {
+            this.ganeshaGroup.position.set(0, 0.28, 0.14);
+            this.ganeshaGroup.rotation.x = 0.28;
+          } else if (player.state === 'JUMPING' || !player.isGrounded) {
+            this.ganeshaGroup.position.set(0, 0.48, 0.14);
+            this.ganeshaGroup.rotation.x = 0.08;
+          } else {
+            this.ganeshaGroup.position.set(0, 0.38 + boatBob, 0.14);
+            this.ganeshaGroup.rotation.set(boatPitch, 0, boatRoll);
+          }
+        }
+
+        // Mushika seated inside front of boat
+        if (this.mooshikaGroup) {
+          this.mooshikaGroup.visible = true;
+          if (player.state === 'SLIDING') {
+            this.mooshikaGroup.position.set(0, 0.18, -0.42);
+            this.mooshikaGroup.scale.set(1.1, 0.65, 1.1);
+          } else {
+            this.mooshikaGroup.position.set(0, 0.24 + boatBob, -0.42);
+            this.mooshikaGroup.rotation.set(boatPitch, 0, boatRoll);
+            this.mooshikaGroup.scale.set(1, 1, 1);
+          }
+        }
+
+        // Paws tucked safely inside boat
+        for (let l = 0; l < this.playerLegs.length; l++) {
+          this.playerLegs[l].visible = false;
+        }
+      } else if (isLevel2) {
+        if (this.boatGroup) {
+          this.boatGroup.visible = false;
+        }
         // --- LEVEL 2: RIDING IN MINECART ON RAILWAY TRACKS ---
         if (this.minecartGroup) {
           this.minecartGroup.visible = true;
@@ -707,19 +773,29 @@ export class ThreeRenderer {
           this.minecartWheels[w].rotation.x = -runCycle * 1.5;
         }
 
-        // Lord Ganesha seated comfortably inside the minecart
+        // Minecart dynamic suspension bounce, track vibration, and subtle pitch & roll
+        const trackVibration = Math.sin(runCycle * 14) * 0.005;
+        const cartSuspensionBounce = Math.sin(runCycle * 6) * 0.012;
+        const cartPitch = Math.sin(runCycle * 3) * 0.008;
+        const cartRoll = Math.cos(runCycle * 2.5) * 0.006;
+        if (this.minecartGroup) {
+          this.minecartGroup.position.set(0, cartSuspensionBounce + trackVibration, 0);
+          this.minecartGroup.rotation.set(cartPitch, 0, cartRoll);
+        }
+
+        // Lord Ganesha seated comfortably inside the minecart, moving synchronized with cart
         if (this.ganeshaGroup) {
           this.ganeshaGroup.visible = true;
           if (player.state === 'SLIDING') {
-            this.ganeshaGroup.position.set(0, 0.28, 0.12);
-            this.ganeshaGroup.rotation.x = 0.35;
+            this.ganeshaGroup.position.set(0, 0.38, 0.12);
+            this.ganeshaGroup.rotation.x = 0.32;
           } else if (player.state === 'JUMPING' || !player.isGrounded) {
-            this.ganeshaGroup.position.set(0, 0.46, 0.12);
-            this.ganeshaGroup.rotation.x = 0.1;
+            this.ganeshaGroup.position.set(0, 0.54, 0.12);
+            this.ganeshaGroup.rotation.x = 0.08;
           } else {
-            const rumble = Math.sin(runCycle * 4) * 0.02;
-            this.ganeshaGroup.position.set(0, 0.44 + rumble, 0.12);
-            this.ganeshaGroup.rotation.x = Math.sin(runCycle * 2) * 0.02;
+            const rumble = Math.sin(runCycle * 4) * 0.015;
+            this.ganeshaGroup.position.set(0, 0.52 + rumble + cartSuspensionBounce, 0.12);
+            this.ganeshaGroup.rotation.set(cartPitch + Math.sin(runCycle * 2) * 0.015, 0, cartRoll);
           }
         }
 
@@ -727,11 +803,12 @@ export class ThreeRenderer {
         if (this.mooshikaGroup) {
           this.mooshikaGroup.visible = true;
           if (player.state === 'SLIDING') {
-            this.mooshikaGroup.position.set(0, 0.2, -0.38);
+            this.mooshikaGroup.position.set(0, 0.26, -0.36);
             this.mooshikaGroup.scale.set(1.1, 0.65, 1.1);
           } else {
-            const rumble = Math.cos(runCycle * 4) * 0.02;
-            this.mooshikaGroup.position.set(0, 0.26 + rumble, -0.38);
+            const rumble = Math.cos(runCycle * 4) * 0.015;
+            this.mooshikaGroup.position.set(0, 0.34 + rumble + cartSuspensionBounce, -0.36);
+            this.mooshikaGroup.rotation.set(cartPitch, 0, cartRoll);
             this.mooshikaGroup.scale.set(1, 1, 1);
           }
         }
@@ -741,6 +818,9 @@ export class ThreeRenderer {
           this.playerLegs[l].visible = false;
         }
       } else {
+        if (this.boatGroup) {
+          this.boatGroup.visible = false;
+        }
         // --- LEVEL 1: GALLOPING ON MOUNTAIN DIRT TRAIL ---
         if (this.minecartGroup) {
           this.minecartGroup.visible = false;
@@ -812,23 +892,6 @@ export class ThreeRenderer {
         this.playerEars[1].rotation.y = 0.25 - earFlap;
       }
 
-      // Soft Shimmering Golden Aura
-      const showAura = GAME_CONFIG.PLAYER_CONFIG.SHOW_AURA;
-      if (this.playerAuraInner) {
-        this.playerAuraInner.visible = showAura;
-        if (showAura) {
-          const pulse = 1.0 + Math.sin(time * 5) * 0.06;
-          this.playerAuraInner.scale.set(pulse, pulse, 1);
-        }
-      }
-      if (this.playerAuraOuter) {
-        this.playerAuraOuter.visible = showAura;
-        if (showAura) {
-          const pulseOuter = 1.05 + Math.cos(time * 4) * 0.08;
-          this.playerAuraOuter.scale.set(pulseOuter, pulseOuter, 1);
-        }
-      }
-
       // Saddle Tassels Swaying
       for (let t = 0; t < this.tassels.length; t++) {
         this.tassels[t].rotation.z = Math.sin(runCycle * 2 + t * 0.55) * 0.28 * GAME_CONFIG.PLAYER_CONFIG.SWAY_INTENSITY;
@@ -854,13 +917,21 @@ export class ThreeRenderer {
         }
       }
 
-      // Running Dust Puffs (Level 1) vs Water Splash Droplets (Level 3)
+      // Running Dust Puffs (Level 1) vs Wheel Dust/Sparks (Level 2) vs Water Splash (Level 3)
       if (!isLevel2 && !isLevel3 && GAME_CONFIG.PLAYER_CONFIG.DUST_EFFECTS && player.isGrounded && _state.mode === 'PLAYING') {
         this.dustTimer += dt;
         if (this.dustTimer >= 0.08) {
           this.dustTimer = 0;
           const pawSide = (Math.random() - 0.5) * 0.6;
           this.spawnDustPuff(player.x + pawSide, 0.05, player.z + 0.4);
+        }
+      } else if (isLevel2 && player.isGrounded && _state.mode === 'PLAYING') {
+        this.dustTimer += dt;
+        if (this.dustTimer >= 0.1) {
+          this.dustTimer = 0;
+          const wheelSide = (Math.random() > 0.5 ? -0.54 : 0.54);
+          const wheelZ = (Math.random() > 0.5 ? -0.52 : 0.52);
+          this.spawnDustPuff(player.x + wheelSide, 0.12, player.z + wheelZ);
         }
       } else if (isLevel3 && player.isGrounded && _state.mode === 'PLAYING') {
         this.splashTimer += dt;
@@ -931,10 +1002,20 @@ export class ThreeRenderer {
     // Look straight down the 3-lane road
     this.camera.lookAt(player.x * 0.15, player.y + 1.6, player.z - 20);
 
-    // Keep morning sun directional light centered with player (beaming from forward horizon)
-    this.dirLight.position.set(player.x, player.y + 18, player.z - 45);
-    this.dirLight.target.position.set(player.x, player.y, player.z + 10);
+    // Morning sun directional light placed high up in the sky well above character
+    this.dirLight.position.set(player.x, player.y + 45, player.z - 60);
+    this.dirLight.target.position.set(player.x, player.y, player.z - 5);
     this.dirLight.target.updateMatrixWorld();
+
+    // Strong, soft front-lighting angled directly at Ganesha's face so his eyes and features are perfectly illuminated
+    this.faceKeyLight.position.set(player.x, player.y + 3.2, player.z - 4.5);
+    this.faceKeyLight.target.position.set(player.x, player.y + 1.8, player.z);
+    this.faceKeyLight.target.updateMatrixWorld();
+
+    // Camera-facing fill light for when Ganesha turns 180° to look directly into camera (Mega Modak bonus)
+    this.faceCameraLight.position.set(player.x, player.y + 2.6, player.z + 4.2);
+    this.faceCameraLight.target.position.set(player.x, player.y + 1.8, player.z);
+    this.faceCameraLight.target.updateMatrixWorld();
 
     // Sky follows forward progress with Parallax
     if (isLevel3) {
